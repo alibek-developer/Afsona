@@ -1,316 +1,170 @@
 'use client'
 
 import { MenuItemDialog } from '@/components/admin/menu-item-dialog'
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Price } from '@/components/ui/price'
 import { supabase } from '@/lib/supabaseClient'
-import type { MenuItem } from '@/lib/types'
-import { CATEGORIES } from '@/lib/types'
-import { motion } from 'framer-motion'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import Image from 'next/image'
+import { Edit2, Plus, Search, Trash2, Utensils } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export default function AdminMenuPage() {
-	const [items, setItems] = useState<MenuItem[]>([])
-	const [searchQuery, setSearchQuery] = useState('')
-	const [showAddDialog, setShowAddDialog] = useState(false)
-	const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
-	const [deletingItem, setDeletingItem] = useState<MenuItem | null>(null)
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
 
-	useEffect(() => {
-		fetchItems()
+  // Ma'lumotlarni yuklash
+  const fetchItems = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-		const channel = supabase
-			.channel('menu_items')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'menu_items' },
-				() => {
-					fetchItems()
-				}
-			)
-			.subscribe()
+      if (error) throw error
+      setItems(data || [])
+    } catch (error: any) {
+      toast.error('Maʼlumotlarni yuklashda xatolik: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-		return () => {
-			supabase.removeChannel(channel)
-		}
-	}, [])
+  useEffect(() => {
+    fetchItems()
+  }, [])
 
-	const fetchItems = async () => {
-		const { data, error } = await supabase
-			.from('menu_items')
-			.select('*')
-			.order('created_at', { ascending: false })
+  // O'chirish funksiyasi
+  const handleDelete = async (id: string) => {
+    if (!confirm('Ushbu taomni oʻchirishni xohlaysizmi?')) return
 
-		if (error) {
-			console.error('Error fetching items:', error)
-			toast.error("Ma'lumotlarni yuklashda xatolik")
-		} else {
-			setItems(data || [])
-		}
-	}
+    const { error } = await supabase.from('menu_items').delete().eq('id', id)
+    if (error) {
+      toast.error('Oʻchirishda xatolik')
+    } else {
+      toast.success('Taom oʻchirildi')
+      fetchItems()
+    }
+  }
 
-	const filteredItems = items.filter(item =>
-		item.name.toLowerCase().includes(searchQuery.toLowerCase())
-	)
+  // Qidiruv mantiqi
+  const filteredItems = items.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
-	const getCategoryName = (categoryId: string) => {
-		return CATEGORIES.find(c => c.id === categoryId)?.name || categoryId
-	}
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      {/* Sarlavha va Tugma */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <Utensils size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Taomlar Menyusi</h1>
+            <p className="text-sm text-slate-500">Jami {items.length} ta mahsulot</p>
+          </div>
+        </div>
+        
+        <div className="flex gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Input 
+              placeholder="Qidirish..." 
+              className="pl-10 w-[250px] rounded-xl border-slate-200 focus:ring-indigo-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button 
+            onClick={() => { setSelectedItem(null); setIsDialogOpen(true); }}
+            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100"
+          >
+            <Plus className="mr-2" size={18} /> Yangi qo'shish
+          </Button>
+        </div>
+      </div>
 
-	const handleToggleWebsite = async (item: MenuItem, checked: boolean) => {
-		console.log(`Toggling website for ${item.name}: ${checked}`)
+      {/* Jadval qismi */}
+      <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-slate-50/50 border-b border-slate-100">
+            <tr>
+              <th className="p-5 text-xs font-bold uppercase text-slate-400 tracking-wider">Taom nomi</th>
+              <th className="p-5 text-xs font-bold uppercase text-slate-400 tracking-wider">Kategoriya</th>
+              <th className="p-5 text-xs font-bold uppercase text-slate-400 tracking-wider">Narxi</th>
+              <th className="p-5 text-xs font-bold uppercase text-slate-400 tracking-wider text-right">Amallar</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {loading ? (
+              <tr>
+                <td colSpan={4} className="p-10 text-center text-slate-400">Yuklanmoqda...</td>
+              </tr>
+            ) : filteredItems.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-10 text-center text-slate-400">Ma'lumot topilmadi</td>
+              </tr>
+            ) : (
+              filteredItems.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden">
+                        <img 
+                          src={item.image_url || '/placeholder.svg'} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          onError={(e: any) => e.target.src = '/placeholder.svg'}
+                        />
+                      </div>
+                      <span className="font-bold text-slate-700">{item.name}</span>
+                    </div>
+                  </td>
+                  <td className="p-5">
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="p-5 font-bold text-indigo-600">
+                    {item.price?.toLocaleString()} so'm
+                  </td>
+                  <td className="p-5 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => { setSelectedItem(item); setIsDialogOpen(true); }}
+                        className="rounded-lg hover:bg-amber-50 hover:text-amber-600"
+                      >
+                        <Edit2 size={18} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDelete(item.id)}
+                        className="rounded-lg hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={18} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-		// Optimistic update
-		setItems(
-			items.map(i =>
-				i.id === item.id ? { ...i, available_on_website: checked } : i
-			)
-		)
-
-		const { error } = await supabase
-			.from('menu_items')
-			.update({ available_on_website: checked })
-			.eq('id', item.id)
-
-		if (error) {
-			console.error('Error updating website availability:', error)
-			toast.error("O'zgartirishda xatolik")
-			// Revert on error
-			fetchItems()
-		}
-	}
-
-	const handleToggleMobile = async (item: MenuItem, checked: boolean) => {
-		console.log(`Toggling mobile for ${item.name}: ${checked}`)
-
-		// Optimistic update
-		setItems(
-			items.map(i =>
-				i.id === item.id ? { ...i, available_on_mobile: checked } : i
-			)
-		)
-
-		const { error } = await supabase
-			.from('menu_items')
-			.update({ available_on_mobile: checked })
-			.eq('id', item.id)
-
-		if (error) {
-			console.error('Error updating mobile availability:', error)
-			toast.error("O'zgartirishda xatolik")
-			// Revert on error
-			fetchItems()
-		}
-	}
-
-	const handleDelete = async () => {
-		if (deletingItem) {
-			const { error } = await supabase
-				.from('menu_items')
-				.delete()
-				.eq('id', deletingItem.id)
-
-			if (error) {
-				console.error('Error deleting item:', error)
-				toast.error("O'chirishda xatolik")
-			} else {
-				toast("Taom o'chirildi", {
-					className:
-						'bg-primary text-primary-foreground border border-primary/30 shadow-lg',
-				})
-				setDeletingItem(null)
-			}
-		}
-	}
-
-	return (
-		<div>
-			{/* Header */}
-			<div className='flex flex-wrap items-center gap-4 mb-6'>
-				<div className='relative flex-1 min-w-[200px]'>
-					<Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-					<Input
-						placeholder='Taom qidirish...'
-						value={searchQuery}
-						onChange={e => setSearchQuery(e.target.value)}
-						className='pl-10 bg-background rounded-2xl shadow-sm'
-					/>
-				</div>
-				<Button
-					onClick={() => setShowAddDialog(true)}
-					className='rounded-2xl shadow-sm'
-				>
-					<Plus className='h-4 w-4 mr-2' />
-					Yangi taom
-				</Button>
-			</div>
-
-			{/* Menu Items Cards */}
-			<div className='flex items-center justify-between mb-4'>
-				<h2 className='text-lg font-extrabold tracking-tight'>
-					Menyu ({filteredItems.length} ta taom)
-				</h2>
-			</div>
-
-			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-				{filteredItems.map(item => (
-					<motion.div
-						key={item.id}
-						initial={{ opacity: 0, y: 10 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.18 }}
-					>
-						<Card className='overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all hover:-translate-y-1'>
-							<div className='relative aspect-4/3 bg-secondary'>
-								<Image
-									src={item.image_url || '/placeholder.svg'}
-									alt={item.name}
-									fill
-									sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-									className='object-cover'
-								/>
-							</div>
-
-							<CardHeader className='pb-2'>
-								<div className='flex items-start justify-between gap-3'>
-									<div className='min-w-0'>
-										<CardTitle className='text-base font-extrabold truncate'>
-											{item.name}
-										</CardTitle>
-										<p className='text-xs text-muted-foreground line-clamp-2 mt-1'>
-											{item.description}
-										</p>
-									</div>
-
-									<Badge variant='outline' className='rounded-full'>
-										{getCategoryName(item.category)}
-									</Badge>
-								</div>
-							</CardHeader>
-
-							<CardContent className='space-y-4'>
-								<div className='flex items-center justify-between'>
-									<div>
-										<p className='text-[11px] uppercase tracking-wide text-muted-foreground font-medium'>
-											Narxi
-										</p>
-										<Price
-											value={item.price}
-											className='text-lg font-extrabold text-primary'
-										/>
-									</div>
-
-									<div className='flex items-center gap-2'>
-										<Button
-											variant='ghost'
-											size='icon'
-											className='rounded-2xl'
-											onClick={() => setEditingItem(item)}
-											aria-label={`${item.name} tahrirlash`}
-										>
-											<Pencil className='h-4 w-4' />
-										</Button>
-										<Button
-											variant='ghost'
-											size='icon'
-											className='rounded-2xl text-destructive'
-											onClick={() => setDeletingItem(item)}
-											aria-label={`${item.name} o'chirish`}
-										>
-											<Trash2 className='h-4 w-4' />
-										</Button>
-									</div>
-								</div>
-
-								<div className='grid grid-cols-2 gap-3'>
-									<label className='flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary px-4 py-3'>
-										<span className='text-xs font-medium text-muted-foreground'>
-											Saytda
-										</span>
-										<Checkbox
-											checked={item.available_on_website}
-											onCheckedChange={checked =>
-												handleToggleWebsite(item, checked as boolean)
-											}
-											aria-label={`Toggle website availability for ${item.name}`}
-										/>
-									</label>
-									<label className='flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary px-4 py-3'>
-										<span className='text-xs font-medium text-muted-foreground'>
-											Mobileda
-										</span>
-										<Checkbox
-											checked={item.available_on_mobile}
-											onCheckedChange={checked =>
-												handleToggleMobile(item, checked as boolean)
-											}
-											aria-label={`Toggle mobile availability for ${item.name}`}
-										/>
-									</label>
-								</div>
-							</CardContent>
-						</Card>
-					</motion.div>
-				))}
-			</div>
-
-			{filteredItems.length === 0 && (
-				<Card className='shadow-md'>
-					<CardContent className='text-center py-20 text-muted-foreground'>
-						Taomlar topilmadi
-					</CardContent>
-				</Card>
-			)}
-
-			{/* Add/Edit Dialog */}
-			<MenuItemDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
-			<MenuItemDialog
-				open={!!editingItem}
-				onOpenChange={() => setEditingItem(null)}
-				editItem={editingItem}
-			/>
-
-			{/* Delete Confirmation */}
-			<AlertDialog
-				open={!!deletingItem}
-				onOpenChange={() => setDeletingItem(null)}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Taomni o'chirish</AlertDialogTitle>
-						<AlertDialogDescription>
-							"{deletingItem?.name}" taomini o'chirmoqchimisiz? Bu amalni
-							qaytarib bo'lmaydi.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							className='bg-destructive text-destructive-foreground'
-						>
-							O'chirish
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</div>
-	)
+      {/* Modal Komponenti */}
+      <MenuItemDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        editItem={selectedItem} 
+      />
+    </div>
+  )
 }

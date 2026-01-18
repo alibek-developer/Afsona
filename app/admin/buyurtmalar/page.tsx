@@ -1,7 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Price } from '@/components/ui/price'
 import {
 	Select,
@@ -13,284 +12,162 @@ import {
 import { supabase } from '@/lib/supabaseClient'
 import type { Order } from '@/lib/types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Loader2, MapPin, Phone, User } from 'lucide-react'
+import { Clock, Hash, Loader2, MapPin, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 const STATUS_LABELS: Record<string, string> = {
-	new: 'Yangi',
-	preparing: 'Tayyorlanmoqda',
-	ready: 'Tayyor',
-	delivered: 'Yetkazildi',
+  new: 'Yangi Buyurtma',
+  preparing: 'Tayyorlanmoqda',
+  ready: 'Tayyor / Kutmoqda',
+  delivered: 'Yetkazib berildi',
 }
 
 const STATUS_COLORS: Record<string, string> = {
-	new: 'bg-primary text-primary-foreground',
-	preparing: 'bg-slate-900 text-white',
-	ready: 'bg-red-800 text-white',
-	delivered: 'bg-slate-700 text-white',
+  new: 'bg-blue-600',
+  preparing: 'bg-amber-500',
+  ready: 'bg-emerald-500',
+  delivered: 'bg-slate-300',
 }
 
 export default function AdminOrdersPage() {
-	const [orders, setOrders] = useState<Order[]>([])
-	const [loading, setLoading] = useState(true)
-	const prevOrderIdsRef = useRef<Set<string>>(new Set())
-	const [highlightedOrderIds, setHighlightedOrderIds] = useState<
-		Record<string, number>
-	>({})
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const prevOrderIdsRef = useRef<Set<string>>(new Set())
+  const [highlightedOrderIds, setHighlightedOrderIds] = useState<Record<string, number>>({})
 
-	useEffect(() => {
-		fetchOrders()
+  useEffect(() => {
+    fetchOrders()
+    const channel = supabase
+      .channel('admin_orders_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
-		const channel = supabase
-			.channel('admin_orders_channel')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'orders' },
-				() => {
-					fetchOrders()
-				}
-			)
-			.subscribe()
+  const fetchOrders = async () => {
+    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+    if (!error) {
+      const nextOrders = (data as Order[]) || []
+      const prevIds = prevOrderIdsRef.current
+      const now = Date.now()
+      const newHighlights: Record<string, number> = {}
+      nextOrders.forEach(o => { if (!prevIds.has(o.id)) newHighlights[o.id] = now })
+      prevOrderIdsRef.current = new Set(nextOrders.map(o => o.id))
+      setHighlightedOrderIds(prev => ({ ...prev, ...newHighlights }))
+      setOrders(nextOrders)
+    }
+    setLoading(false)
+  }
 
-		return () => {
-			supabase.removeChannel(channel)
-		}
-	}, [])
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
+    if (!error) {
+      toast.success('Status muvaffaqiyatli yangilandi')
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus as any } : o))
+    }
+  }
 
-	const fetchOrders = async () => {
-		const { data, error } = await supabase
-			.from('orders')
-			.select('*')
-			.order('created_at', { ascending: false })
+  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-slate-900" size={32} /></div>
 
-		if (error) {
-			toast.error('Buyurtmalarni yuklashda xatolik')
-		} else {
-			const nextOrders = (data as Order[]) || []
-			const prevIds = prevOrderIdsRef.current
-			const nextIds = new Set(nextOrders.map(o => o.id))
+  return (
+    <div className='space-y-6 max-w-[1200px] mx-auto p-4'>
+      <div className='flex justify-between items-center mb-8'>
+        <div>
+          <h1 className='text-3xl font-black tracking-tight text-slate-900'>Buyurtmalar Oqimi</h1>
+          <p className='text-sm font-bold text-slate-400 uppercase tracking-[0.2em]'>Jonli monitoring tizimi</p>
+        </div>
+        <div className='bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4'>
+            <div>
+              <p className='text-[10px] font-black text-slate-400 uppercase'>Bugungi jami</p>
+              <p className='text-2xl font-black leading-none text-slate-900'>{orders.length}</p>
+            </div>
+            <div className='w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600'>
+              <Hash size={20} />
+            </div>
+        </div>
+      </div>
 
-			const now = Date.now()
-			const newHighlights: Record<string, number> = {}
-			for (const o of nextOrders) {
-				if (!prevIds.has(o.id)) {
-					newHighlights[o.id] = now
-				}
-			}
+      <div className='flex flex-col gap-3'>
+        <AnimatePresence mode='popLayout'>
+          {orders.map(order => (
+            <motion.div 
+              key={order.id} 
+              initial={{ opacity: 0, x: -10 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              exit={{ opacity: 0, scale: 0.95 }}
+              layout
+            >
+              <Card className={`border-none shadow-sm transition-all overflow-hidden bg-white ${highlightedOrderIds[order.id] ? 'ring-2 ring-blue-500 shadow-blue-100' : ''}`}>
+                <CardContent className='p-0 flex items-stretch h-[85px]'>
+                  <div className={`w-2 ${STATUS_COLORS[order.status]} transition-colors`} />
+                  
+                  <div className='flex-1 flex items-center px-6 gap-8'>
+                    {/* Time & ID */}
+                    <div className='w-24 shrink-0'>
+                      <div className='flex items-center gap-1.5 text-slate-400 mb-1'>
+                        <Clock size={14} />
+                        <span className='text-xs font-black'>
+                          {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className='text-sm font-black text-slate-900 tracking-tight'>#{order.id.slice(0, 6).toUpperCase()}</p>
+                    </div>
 
-			prevOrderIdsRef.current = nextIds
+                    {/* Customer Info */}
+                    <div className='w-56 shrink-0 border-l border-slate-50 pl-6'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100'>
+                          <User size={18} />
+                        </div>
+                        <div className='min-w-0'>
+                          <p className='text-sm font-black text-slate-900 truncate'>{order.customer_name}</p>
+                          <p className='text-xs font-bold text-slate-400 mt-0.5'>{order.customer_phone}</p>
+                        </div>
+                      </div>
+                    </div>
 
-			if (Object.keys(newHighlights).length > 0) {
-				setHighlightedOrderIds(prev => ({ ...prev, ...newHighlights }))
-				for (const id of Object.keys(newHighlights)) {
-					window.setTimeout(() => {
-						setHighlightedOrderIds(prev => {
-							if (!(id in prev)) return prev
-							const next = { ...prev }
-							delete next[id]
-							return next
-						})
-					}, 5200)
-				}
-			}
+                    {/* Location / Table */}
+                    <div className='flex-1 min-w-0 border-l border-slate-50 pl-6'>
+                      <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5'>Joylashuv</p>
+                      <div className='flex items-center gap-2'>
+                        {order.mode === 'dine-in' ? (
+                          <span className='px-3 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-black shadow-sm'>STOL #{order.table_number}</span>
+                        ) : (
+                          <div className='flex items-center gap-2 truncate text-slate-700 font-bold text-sm'>
+                            <MapPin size={16} className='text-red-500 shrink-0' /> 
+                            <span className="truncate">{order.delivery_address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-			setOrders(nextOrders)
-		}
-		setLoading(false)
-	}
+                    {/* Total Price */}
+                    <div className='w-40 text-right border-l border-slate-50 px-6'>
+                      <p className='text-[10px] font-black text-slate-400 uppercase mb-1'>Umumiy Summa</p>
+                      <Price value={order.total || 0} className='text-xl font-black text-slate-900 tracking-tighter' />
+                    </div>
 
-	const handleStatusChange = async (orderId: string, newStatus: string) => {
-		const { error } = await supabase
-			.from('orders')
-			.update({ status: newStatus })
-			.eq('id', orderId)
-
-		if (error) {
-			toast.error('Xatolik yuz berdi')
-		} else {
-			toast('Status yangilandi', {
-				className:
-					'bg-primary text-primary-foreground border border-primary/30 shadow-lg',
-			})
-			setOrders(prev =>
-				prev.map(o =>
-					o.id === orderId ? { ...o, status: newStatus as any } : o
-				)
-			)
-		}
-	}
-
-	if (loading)
-		return (
-			<div className='flex flex-col items-center justify-center p-20 gap-4'>
-				<Loader2 className='w-10 h-10 animate-spin text-primary' />
-				<p className='text-muted-foreground animate-pulse'>Yuklanmoqda...</p>
-			</div>
-		)
-
-	return (
-		<div className='space-y-6'>
-			<div className='flex justify-between items-center'>
-				<h1 className='text-3xl font-extrabold tracking-tight'>
-					Buyurtmalar boshqaruvi
-				</h1>
-				<Badge variant='outline' className='text-lg py-1 px-4'>
-					Jami: {orders.length} ta
-				</Badge>
-			</div>
-
-			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-				<AnimatePresence>
-					{orders.map(order => {
-						const highlightStart = highlightedOrderIds[order.id]
-						const isHighlighted = highlightStart ? true : false
-						const grandTotal = Number(
-							(order as any).grand_total ??
-								(order as any).total_amount ??
-								order.total ??
-								0
-						)
-
-						return (
-							<motion.div
-								key={order.id}
-								initial={{ opacity: 0, y: 14 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: 8 }}
-								transition={{ duration: 0.18 }}
-							>
-								<Card
-									className={`relative overflow-hidden border shadow-md rounded-2xl bg-card transition-all hover:shadow-xl hover:-translate-y-1 ${
-										isHighlighted ? 'ring-2 ring-primary/60' : ''
-									}`}
-								>
-									{isHighlighted && (
-										<motion.div
-											aria-hidden='true'
-											className='pointer-events-none absolute inset-0'
-											initial={{ opacity: 0.9 }}
-											animate={{ opacity: [0.15, 0.6, 0.15] }}
-											transition={{
-												duration: 1.2,
-												repeat: 4,
-												ease: 'easeInOut',
-											}}
-											style={{
-												boxShadow: 'inset 0 0 0 2px rgba(220, 38, 38, 0.45)',
-											}}
-										/>
-									)}
-
-									<CardHeader className='pb-3'>
-										<div className='flex items-start justify-between gap-3'>
-											<div className='min-w-0'>
-												{/* Mijoz Ma'lumotlari */}
-												<div className='flex items-center gap-2'>
-													<User className='w-4 h-4 text-muted-foreground' />
-													<p className='font-extrabold text-foreground truncate'>
-														{order.customer_name}
-													</p>
-												</div>
-												<div className='flex items-center gap-2 text-xs text-muted-foreground mt-1'>
-													<Phone className='w-3.5 h-3.5' />
-													<span className='truncate'>
-														{order.customer_phone}
-													</span>
-												</div>
-											</div>
-
-											{/* Status Badge */}
-											<Badge
-												className={`border-none px-3 py-1 rounded-full shadow-sm ${
-													STATUS_COLORS[order.status]
-												}`}
-											>
-												{STATUS_LABELS[order.status] || order.status}
-											</Badge>
-										</div>
-									</CardHeader>
-
-									<CardContent className='space-y-4'>
-										<div className='flex items-center justify-between'>
-											{/* Jami Pul */}
-											<div>
-												<p className='text-[11px] uppercase tracking-wide text-muted-foreground font-medium'>
-													Umumiy
-												</p>
-												<p className='text-lg font-extrabold text-primary'>
-													<Price value={grandTotal} />
-												</p>
-											</div>
-
-											<div className='text-right'>
-												<p className='text-[11px] uppercase tracking-wide text-muted-foreground font-medium'>
-													Turi
-												</p>
-												{/* Turi va Manzil */}
-												{order.mode === 'dine-in' ? (
-													<Badge
-														variant='outline'
-														className='rounded-full bg-primary/5 border-primary/20 text-primary'
-													>
-														Stol: {order.table_number}
-													</Badge>
-												) : (
-													<Badge
-														variant='secondary'
-														className='rounded-full bg-secondary text-foreground'
-													>
-														Yetkazib berish
-													</Badge>
-												)}
-											</div>
-										</div>
-
-										{order.mode !== 'dine-in' && (
-											<div className='flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3'>
-												<MapPin className='w-4 h-4 text-primary shrink-0 mt-0.5' />
-												<p className='text-sm text-muted-foreground leading-snug'>
-													{order.delivery_address || "Manzil ko'rsatilmagan"}
-												</p>
-											</div>
-										)}
-
-										{/* Amal (Statusni o'zgartirish) */}
-										<div className='pt-2 border-t border-border flex items-center justify-between gap-3'>
-											<p className='text-xs font-medium text-muted-foreground'>
-												Status
-											</p>
-											<Select
-												value={order.status}
-												onValueChange={val => handleStatusChange(order.id, val)}
-											>
-												<SelectTrigger className='w-[170px] h-10 rounded-2xl shadow-sm'>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{Object.entries(STATUS_LABELS).map(([key, label]) => (
-														<SelectItem key={key} value={key}>
-															{label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						)
-					})}
-				</AnimatePresence>
-			</div>
-
-			{orders.length === 0 && (
-				<Card className='shadow-md'>
-					<CardContent className='text-center py-20 text-muted-foreground'>
-						Hozircha buyurtmalar mavjud emas.
-					</CardContent>
-				</Card>
-			)}
-		</div>
-	)
+                    {/* Status Select Tool */}
+                    <div className='w-48 shrink-0'>
+                       <Select value={order.status} onValueChange={(val) => handleStatusChange(order.id, val)}>
+                        <SelectTrigger className='h-12 bg-slate-50 border-none font-black text-xs rounded-xl hover:bg-slate-100 transition-colors'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className='rounded-xl border-none shadow-xl'>
+                          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                            <SelectItem key={key} value={key} className='py-3 font-bold text-xs'>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
+  )
 }

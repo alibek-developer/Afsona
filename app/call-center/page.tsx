@@ -5,409 +5,295 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Price } from '@/components/ui/price'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/supabaseClient'
 import type { MenuItem } from '@/lib/types'
 import { CATEGORIES } from '@/lib/types'
 import { useAuthGuard } from '@/lib/useAuth'
-import { CheckCircle2, Loader2, LogOut, Minus, Plus } from 'lucide-react'
+import {
+	CheckCircle2,
+	Hash,
+	Loader2,
+	LogOut,
+	MapPin,
+	Minus,
+	Plus,
+	Search,
+	ShoppingBag
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { submitOrder } from './actions'
 
-export default function CallCenterPage() {
-	const { loading: authLoading } = useAuthGuard({
-		allowRoles: ['admin', 'operator'],
-	})
+export default function ProfessionalCallCenter() {
+  const { loading: authLoading } = useAuthGuard({ allowRoles: ['admin', 'operator'] })
+  const [items, setItems] = useState<MenuItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
-	const [items, setItems] = useState<MenuItem[]>([])
-	const [loading, setLoading] = useState(true)
-	const [submitting, setSubmitting] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [mode, setMode] = useState<'delivery' | 'dine-in'>('delivery')
+  const [address, setAddress] = useState('')
+  const [tableNumber, setTableNumber] = useState('')
+  const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([])
 
-	// Form State
-	const [customerName, setCustomerName] = useState('')
-	const [phone, setPhone] = useState('')
-	const [mode, setMode] = useState<'delivery' | 'dine-in'>('delivery')
-	const [address, setAddress] = useState('')
-	const [tableNumber, setTableNumber] = useState('')
-	const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([])
+  useEffect(() => { fetchItems() }, [])
 
-	useEffect(() => {
-		fetchItems()
+  const fetchItems = async () => {
+    const { data, error } = await supabase.from('menu_items').select('*').eq('available_on_website', true).order('category')
+    if (!error) setItems(data || [])
+    setLoading(false)
+  }
 
-		const channel = supabase
-			.channel('realtime:menu_items')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'menu_items' },
-				() => {
-					fetchItems()
-				}
-			)
-			.subscribe()
+  // TIZIMDAN CHIQISH MANTIQI
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      toast.success("Tizimdan chiqildi")
+      window.location.href = '/login'
+    } catch (error: any) {
+      toast.error("Xatolik: " + error.message)
+    }
+  }
 
-		return () => {
-			supabase.removeChannel(channel)
-		}
-	}, [])
+  const addToCart = (item: MenuItem) => {
+    const existing = cart.find(i => i.item.id === item.id)
+    if (existing) {
+      setCart(cart.map(i => i.item.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+    } else {
+      setCart([...cart, { item, quantity: 1 }])
+    }
+  }
 
-	const fetchItems = async () => {
-		const { data, error } = await supabase
-			.from('menu_items')
-			.select('*')
-			.eq('available_on_website', true)
-			.order('category')
+  const updateQuantity = (itemId: string, delta: number) => {
+    setCart(cart.map(i => i.item.id === itemId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i).filter(i => i.quantity > 0))
+  }
 
-		if (error) {
-			toast.error('Menyuni yuklashda xatolik')
-		} else {
-			setItems(data || [])
-		}
-		setLoading(false)
-	}
+  const calculateTotal = () => cart.reduce((sum, { item, quantity }) => sum + item.price * quantity, 0)
 
-	const handleLogout = async () => {
-		try {
-			// Sessiyani to'liq o'chirish
-			await supabase.auth.signOut()
-			// Hard redirect - middleware sessiya yo'qligini tanishi uchun
-			window.location.href = '/login'
-		} catch (error) {
-			console.error('Logout error:', error)
-			// Xatolik bo'lsa ham login sahifasiga o'tish
-			window.location.href = '/login'
-		}
-	}
+  const handleSubmit = async () => {
+    if (cart.length === 0) return toast.error("Savatcha bo'sh")
+    if (!customerName || !phone) return toast.error("Mijoz ma'lumotlarini kiriting")
+    setSubmitting(true)
+    const orderData = {
+      customer_name: customerName,
+      customer_phone: phone,
+      mode,
+      delivery_address: mode === 'delivery' ? address : null,
+      table_number: mode === 'dine-in' ? tableNumber : null,
+      items: cart,
+      total: calculateTotal(),
+      payment_method: 'cash',
+    }
+    const result = await submitOrder(orderData)
+    if (result.success) {
+      toast.success('Buyurtma qabul qilindi!')
+      setCustomerName(''); setPhone(''); setAddress(''); setTableNumber(''); setCart([]);
+    } else {
+      toast.error('Xatolik yuz berdi')
+    }
+    setSubmitting(false)
+  }
 
-	const addToCart = (item: MenuItem) => {
-		const existing = cart.find(i => i.item.id === item.id)
-		if (existing) {
-			setCart(
-				cart.map(i =>
-					i.item.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-				)
-			)
-		} else {
-			setCart([...cart, { item, quantity: 1 }])
-		}
-	}
+  if (authLoading || loading) return <div className="h-screen flex items-center justify-center bg-white font-sans"><Loader2 className="animate-spin text-red-500" /></div>
 
-	const removeFromCart = (itemId: string) => {
-		setCart(cart.filter(i => i.item.id !== itemId))
-	}
+  return (
+    <div className="min-h-screen bg-[#F1F5F9] font-sans antialiased text-slate-900">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-[1800px] mx-auto px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center shadow-lg shadow-red-200 text-white">
+              <ShoppingBag size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-tight uppercase">CALL-CENTER PANEL</h1>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Online Monitoring</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* TO'G'RILANGAN CHIQISH TUGMASI */}
+          <Button 
+            variant="ghost" 
+            onClick={handleSignOut}
+            className="rounded-xl hover:bg-red-50 hover:text-red-500 font-black transition-all px-6 border border-transparent hover:border-red-100"
+          >
+            <LogOut className="h-5 w-5 mr-2" /> CHIQUV
+          </Button>
+        </div>
+      </header>
 
-	const updateQuantity = (itemId: string, delta: number) => {
-		setCart(
-			cart
-				.map(i => {
-					if (i.item.id === itemId) {
-						const newQty = Math.max(0, i.quantity + delta)
-						return { ...i, quantity: newQty }
-					}
-					return i
-				})
-				.filter(i => i.quantity > 0)
-		)
-	}
+      <main className="max-w-[1800px] mx-auto p-8 gap-8 grid grid-cols-12 h-[calc(100vh-100px)]">
+        
+        {/* LEFT: Menu Section */}
+        <div className="col-span-8 flex flex-col gap-6">
+          <div className="relative group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors" size={22} />
+            <input 
+              type="text" 
+              placeholder="Taom yoki ichimlik qidirish..." 
+              className="w-full bg-white border-none h-16 pl-14 pr-6 rounded-2xl shadow-sm text-lg font-bold focus:ring-2 focus:ring-red-500/20 outline-none transition-all"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-	const calculateTotal = () => {
-		return cart.reduce(
-			(sum, { item, quantity }) => sum + item.price * quantity,
-			0
-		)
-	}
+          <ScrollArea className="flex-1 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm">
+            <div className="p-8 space-y-10">
+              {CATEGORIES.map(category => {
+                const catItems = items.filter(i => i.category === category.id && i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                if (catItems.length === 0) return null
+                return (
+                  <div key={category.id}>
+                    <div className="flex items-center gap-3 mb-6">
+                      <span className="text-2xl">{category.icon}</span>
+                      <h3 className="font-black text-slate-800 uppercase tracking-[0.2em] text-sm">{category.name}</h3>
+                      <div className="h-px bg-slate-100 flex-1 ml-4" />
+                    </div>
+                    <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                      {catItems.map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => addToCart(item)}
+                          className="group p-6 rounded-3xl border border-slate-50 bg-white hover:border-red-500 hover:shadow-2xl hover:shadow-red-500/10 transition-all text-left relative overflow-hidden active:scale-95"
+                        >
+                          <div className="relative z-10">
+                            <p className="font-black text-lg text-slate-800 mb-1 group-hover:text-red-600 transition-colors">{item.name}</p>
+                            <Price value={item.price} className="text-sm font-black text-slate-400" />
+                          </div>
+                          <div className="absolute right-5 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
+                            <Plus size={24} />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </ScrollArea>
+        </div>
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		if (cart.length === 0) {
-			toast.error("Savatcha bo'sh")
-			return
-		}
-		if (!customerName || !phone) {
-			toast.error("Mijoz ma'lumotlarini kiriting")
-			return
-		}
-		if (mode === 'delivery' && !address) {
-			toast.error('Manzilni kiriting')
-			return
-		}
-		if (mode === 'dine-in' && !tableNumber) {
-			toast.error('Stol raqamini kiriting')
-			return
-		}
+        {/* RIGHT: Order Form Section */}
+        <div className="col-span-4 h-full">
+          <Card className="h-full border-none shadow-2xl shadow-slate-200/60 rounded-[3rem] flex flex-col bg-white overflow-hidden">
+            <CardHeader className="p-8 pb-4 border-b border-slate-50">
+              <CardTitle className="text-xl font-black flex justify-between items-center tracking-tighter">
+                YANGI BUYURTMA
+                <span className="text-[10px] bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-black">LIVE</span>
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="p-8 space-y-8 flex-1 overflow-y-auto">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">Mijoz</Label>
+                    <Input 
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      placeholder="Ismi"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-red-500 font-black text-slate-700" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">Tel</Label>
+                    <Input 
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="+998"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-red-500 font-black text-slate-700" 
+                    />
+                  </div>
+                </div>
 
-		setSubmitting(true)
+                <div className="space-y-3">
+                  <Label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">Xizmat</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => setMode('delivery')}
+                      className={`h-16 rounded-[1.25rem] border-2 flex items-center justify-center gap-2 font-black transition-all ${mode === 'delivery' ? 'border-red-500 bg-red-50 text-red-600 shadow-lg shadow-red-500/10' : 'border-slate-50 bg-slate-50 text-slate-400'}`}
+                    >
+                      <MapPin size={20} /> YETKAZISH
+                    </button>
+                    <button 
+                      onClick={() => setMode('dine-in')}
+                      className={`h-16 rounded-[1.25rem] border-2 flex items-center justify-center gap-2 font-black transition-all ${mode === 'dine-in' ? 'border-red-500 bg-red-50 text-red-600 shadow-lg shadow-red-500/10' : 'border-slate-50 bg-slate-50 text-slate-400'}`}
+                    >
+                      <Hash size={20} /> ZALDA
+                    </button>
+                  </div>
+                </div>
 
-		const orderData = {
-			customer_name: customerName,
-			customer_phone: phone,
-			mode,
-			delivery_address: mode === 'delivery' ? address : null,
-			table_number: mode === 'dine-in' ? tableNumber : null,
-			items: cart,
-			total: calculateTotal(),
-			payment_method: 'cash', // Default
-		}
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">{mode === 'delivery' ? 'Manzil' : 'Stol'}</Label>
+                  {mode === 'delivery' ? (
+                    <Textarea 
+                      value={address}
+                      onChange={e => setAddress(e.target.value)}
+                      placeholder="Manzilni batafsil yozing..."
+                      className="rounded-[1.25rem] bg-slate-50 border-transparent focus:bg-white focus:border-red-500 min-h-[100px] font-bold text-slate-700 p-4" 
+                    />
+                  ) : (
+                    <Input 
+                      value={tableNumber}
+                      onChange={e => setTableNumber(e.target.value)}
+                      placeholder="Masalan: 5"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-red-500 font-black text-slate-700" 
+                    />
+                  )}
+                </div>
+              </div>
 
-		const result = await submitOrder(orderData)
+              <div className="pt-6 border-t border-slate-100">
+                <Label className="text-xs font-black text-slate-400 uppercase block mb-6 tracking-[0.2em]">Savatcha</Label>
+                <div className="space-y-4">
+                  {cart.length === 0 && <p className="text-center text-slate-300 font-bold py-4">Hali taom tanlanmadi</p>}
+                  {cart.map(({ item, quantity }) => (
+                    <div key={item.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100/50 shadow-sm">
+                      <div className="flex-1">
+                        <p className="font-black text-slate-800 text-sm">{item.name}</p>
+                        <Price value={item.price * quantity} className="text-xs font-black text-red-500" />
+                      </div>
+                      <div className="flex items-center bg-white rounded-xl border border-slate-200 p-1.5 gap-1">
+                        <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:text-red-500 transition-colors"><Minus size={16}/></button>
+                        <span className="w-10 text-center text-sm font-black">{quantity}</span>
+                        <button onClick={() => addToCart(item)} className="p-1 hover:text-red-500 transition-colors"><Plus size={16}/></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
 
-		if (!result.success) {
-			console.error('Order error:', result.message)
-			toast.error('Buyurtma yaratishda xatolik', {
-				description: result.message, // Show specific error if available
-			})
-		} else {
-			toast('Buyurtma qabul qilindi!', {
-				className:
-					'bg-primary text-primary-foreground border border-primary/30 shadow-lg',
-			})
-			// Reset form
-			setCustomerName('')
-			setPhone('')
-			setAddress('')
-			setTableNumber('')
-			setCart([])
-			setMode('delivery')
-		}
-		setSubmitting(false)
-	}
-
-	if (authLoading)
-		return (
-			<div className='flex h-screen items-center justify-center'>
-				<Loader2 className='animate-spin' />
-			</div>
-		)
-
-	if (loading)
-		return (
-			<div className='flex h-screen items-center justify-center'>
-				<Loader2 className='animate-spin' />
-			</div>
-		)
-
-	return (
-		<div className='min-h-screen bg-background flex flex-col'>
-			<header className='bg-background border-b-2 border-black sticky top-0 z-10'>
-				<div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
-					<h1 className='font-display text-xl font-black tracking-tight'>
-						Kall-markaz operatori
-					</h1>
-					<Button
-						variant='ghost'
-						onClick={handleLogout}
-						className='text-primary hover:text-primary hover:bg-primary/10'
-					>
-						<LogOut className='h-4 w-4 mr-2' />
-						Chiqish
-					</Button>
-				</div>
-			</header>
-
-			<main className='flex-1'>
-				<div className='max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-					{/* Menu Section */}
-					<div className='lg:col-span-2 space-y-6'>
-						<Card>
-							<CardHeader>
-								<CardTitle className='font-display font-black tracking-tight'>
-									Menyu
-								</CardTitle>
-							</CardHeader>
-							<CardContent className='p-0'>
-								<ScrollArea className='h-[560px] px-6'>
-									<div className='space-y-8 pb-6'>
-										{CATEGORIES.map(category => {
-											const catItems = items.filter(
-												i => i.category === category.id
-											)
-											if (catItems.length === 0) return null
-											return (
-												<div key={category.id}>
-													<h3 className='font-display font-black tracking-tight text-lg mb-4 flex items-center gap-2'>
-														<span>{category.icon}</span> {category.name}
-													</h3>
-													<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-														{catItems.map(item => (
-															<div
-																key={item.id}
-																className='border border-border rounded-2xl p-3 hover:bg-secondary transition-colors cursor-pointer flex justify-between items-start gap-2'
-																onClick={() => addToCart(item)}
-															>
-																<div>
-																	<p className='font-medium text-foreground'>
-																		{item.name}
-																	</p>
-																	<Price
-																		value={item.price}
-																		className='text-sm text-primary font-bold'
-																	/>
-																</div>
-																<Button
-																	size='icon'
-																	variant='ghost'
-																	className='h-6 w-6 shrink-0'
-																>
-																	<Plus className='h-4 w-4' />
-																</Button>
-															</div>
-														))}
-													</div>
-												</div>
-											)
-										})}
-									</div>
-								</ScrollArea>
-							</CardContent>
-						</Card>
-					</div>
-
-					{/* Order Form Section */}
-					<div className='lg:col-span-1'>
-						<Card className='flex flex-col'>
-							<CardHeader>
-								<CardTitle className='font-display font-black tracking-tight'>
-									Buyurtma
-								</CardTitle>
-							</CardHeader>
-							<CardContent className='flex-1 overflow-y-auto flex flex-col gap-6'>
-								<form
-									id='order-form'
-									onSubmit={handleSubmit}
-									className='space-y-4'
-								>
-									<div className='grid grid-cols-2 gap-4'>
-										<div className='space-y-2'>
-											<Label>Mijoz ismi</Label>
-											<Input
-												value={customerName}
-												onChange={e => setCustomerName(e.target.value)}
-												required
-												placeholder='Ism'
-											/>
-										</div>
-										<div className='space-y-2'>
-											<Label>Telefon</Label>
-											<Input
-												value={phone}
-												onChange={e => setPhone(e.target.value)}
-												required
-												placeholder='+998...'
-											/>
-										</div>
-									</div>
-
-									<div className='space-y-2'>
-										<Label>Xizmat turi</Label>
-										<RadioGroup
-											value={mode}
-											onValueChange={(v: any) => setMode(v)}
-											className='flex gap-4'
-										>
-											<div className='flex items-center space-x-2'>
-												<RadioGroupItem value='delivery' id='r1' />
-												<Label htmlFor='r1'>Yetkazib berish</Label>
-											</div>
-											<div className='flex items-center space-x-2'>
-												<RadioGroupItem value='dine-in' id='r2' />
-												<Label htmlFor='r2'>Zalda</Label>
-											</div>
-										</RadioGroup>
-									</div>
-
-									{mode === 'delivery' ? (
-										<div className='space-y-2'>
-											<Label>Manzil</Label>
-											<Textarea
-												value={address}
-												onChange={e => setAddress(e.target.value)}
-												placeholder='Mijoz manzili...'
-											/>
-										</div>
-									) : (
-										<div className='space-y-2'>
-											<Label>Stol raqami</Label>
-											<Input
-												value={tableNumber}
-												onChange={e => setTableNumber(e.target.value)}
-												placeholder='Masalan: 5'
-											/>
-										</div>
-									)}
-								</form>
-
-								<div className='flex-1 mt-4'>
-									<h4 className='font-medium mb-2'>Tanlangan taomlar</h4>
-									{cart.length === 0 ? (
-										<p className='text-sm text-muted-foreground text-center py-4'>
-											Savatcha bo'sh
-										</p>
-									) : (
-										<div className='space-y-2'>
-											{cart.map(({ item, quantity }) => (
-												<div
-													key={item.id}
-													className='flex items-center justify-between text-sm bg-muted/30 p-2 rounded'
-												>
-													<div className='flex-1'>
-														<p className='font-medium'>{item.name}</p>
-														<p className='text-xs text-muted-foreground'>
-															<Price value={item.price} /> x {quantity}
-														</p>
-													</div>
-													<div className='flex items-center gap-2'>
-														<Button
-															size='icon'
-															variant='outline'
-															className='h-6 w-6'
-															onClick={() => updateQuantity(item.id, -1)}
-														>
-															<Minus className='h-3 w-3' />
-														</Button>
-														<span className='w-4 text-center'>{quantity}</span>
-														<Button
-															size='icon'
-															variant='outline'
-															className='h-6 w-6'
-															onClick={() => updateQuantity(item.id, 1)}
-														>
-															<Plus className='h-3 w-3' />
-														</Button>
-													</div>
-													<p className='font-medium w-20 text-right'>
-														<Price value={item.price * quantity} />
-													</p>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							</CardContent>
-							<div className='p-6 border-t border-border pt-4'>
-								<Button
-									form='order-form'
-									type='submit'
-									className='w-full font-black bg-white text-black border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all uppercase'
-									size='lg'
-									disabled={submitting || cart.length === 0}
-								>
-									{submitting ? (
-										<>
-											<Loader2 className='mr-2 h-4 w-4 animate-spin' />
-											Yuborilmoqda...
-										</>
-									) : (
-										<CheckCircle2 className='mr-2' />
-									)}
-									Buyurtmani tasdiqlash
-								</Button>
-							</div>
-						</Card>
-					</div>
-				</div>
-			</main>
-		</div>
-	)
+            <div className="p-8 pt-4 bg-white border-t border-slate-100">
+              <div className="flex justify-between items-end mb-8 px-2">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Umumiy hisob</p>
+                  <Price value={calculateTotal()} className="text-4xl font-black text-slate-900 tracking-tighter" />
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full uppercase">Tayyor</span>
+                </div>
+              </div>
+              <Button 
+                onClick={handleSubmit}
+                disabled={submitting || cart.length === 0}
+                className="w-full h-20 bg-red-500 hover:bg-red-600 text-white rounded-[1.5rem] text-xl font-black shadow-2xl shadow-red-500/30 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                {submitting ? <Loader2 className="animate-spin" size={24} /> : <CheckCircle2 size={24} />}
+                BUYURTMANI YUBORISH
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </main>
+    </div>
+  )
 }

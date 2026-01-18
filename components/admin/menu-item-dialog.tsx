@@ -2,268 +2,169 @@
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/supabaseClient'
-import type { MenuItem } from '@/lib/types'
 import { CATEGORIES } from '@/lib/types'
+import { Loader2, UtensilsCrossed } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-interface MenuItemDialogProps {
-	open: boolean
-	onOpenChange: (open: boolean) => void
-	editItem?: MenuItem | null
-}
+export function MenuItemDialog({ open, onOpenChange, editItem }: any) {
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    image_url: '',
+    available_on_website: true,
+    available_on_mobile: true,
+  })
 
-export function MenuItemDialog({
-	open,
-	onOpenChange,
-	editItem,
-}: MenuItemDialogProps) {
-	const [name, setName] = useState('')
-	const [description, setDescription] = useState('')
-	const [price, setPrice] = useState('')
-	const [category, setCategory] = useState('')
-	const [imageUrl, setImageUrl] = useState('')
-	const [availableOnWebsite, setAvailableOnWebsite] = useState(true)
-	const [availableOnMobile, setAvailableOnMobile] = useState(true)
-	const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    if (open) {
+      if (editItem) {
+        setFormData({
+          name: editItem.name || '',
+          description: editItem.description || '',
+          price: editItem.price?.toString() || '',
+          category: editItem.category || '',
+          image_url: editItem.image_url || '',
+          available_on_website: !!editItem.available_on_website,
+          available_on_mobile: !!editItem.available_on_mobile,
+        });
+      } else {
+        setFormData({
+          name: '', description: '', price: '', category: '', image_url: '',
+          available_on_website: true, available_on_mobile: true,
+        });
+      }
+    }
+  }, [open, editItem]);
 
-	useEffect(() => {
-		if (editItem) {
-			setName(editItem.name)
-			setDescription(editItem.description)
-			setPrice(editItem.price.toString())
-			setCategory(editItem.category)
-			setImageUrl(editItem.image_url)
-			setAvailableOnWebsite(editItem.available_on_website)
-			setAvailableOnMobile(editItem.available_on_mobile)
-		} else {
-			resetForm()
-		}
-	}, [editItem, open])
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.category) return toast.error("Kategoriyani tanlang")
+    
+    setLoading(true)
+    const itemData = { 
+      ...formData, 
+      price: parseFloat(formData.price) || 0 
+    }
 
-	const resetForm = () => {
-		setName('')
-		setDescription('')
-		setPrice('')
-		setCategory('')
-		setImageUrl('')
-		setAvailableOnWebsite(true)
-		setAvailableOnMobile(true)
-	}
+    try {
+      const { error } = editItem 
+        ? await supabase.from('menu_items').update(itemData).eq('id', editItem.id)
+        : await supabase.from('menu_items').insert([itemData])
 
-	const handleWebsiteChange = (checked: boolean) => {
-		console.log('Dialog: Website checkbox changed:', checked)
-		setAvailableOnWebsite(checked)
-	}
+      if (error) throw error
 
-	const handleMobileChange = (checked: boolean) => {
-		console.log('Dialog: Mobile checkbox changed:', checked)
-		setAvailableOnMobile(checked)
-	}
+      toast.success(editItem ? 'Muvaffaqiyatli yangilandi' : 'Yangi taom qo\'shildi')
+      onOpenChange(false)
+      window.location.reload()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-	const handleSubmit = async () => {
-		setLoading(true)
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[550px] p-0 overflow-hidden border-none shadow-2xl rounded-[30px] bg-white text-slate-900">
+        <div className="bg-[#0f172a] p-6 text-white flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+            <UtensilsCrossed size={24} className="text-indigo-400" />
+          </div>
+          <div>
+            <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+              {editItem ? 'Tahrirlash' : 'Yangi Taom'}
+            </DialogTitle>
+            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Admin boshqaruv paneli</p>
+          </div>
+        </div>
 
-		// Validatsiya
-		const priceNum = Number.parseInt(price, 10)
-		if (isNaN(priceNum) || priceNum <= 0) {
-			toast.error("Narx noto'g'ri formatda")
-			setLoading(false)
-			return
-		}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Nomi */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Taom nomi</Label>
+            <Input 
+              required
+              value={formData.name}
+              onChange={e => setFormData({...formData, name: e.target.value})}
+              className="h-12 rounded-xl border-none bg-slate-50 font-semibold px-5 focus:ring-2 ring-indigo-100 shadow-none" 
+            />
+          </div>
 
-		const itemData = {
-			name: name.trim(),
-			description: description.trim(),
-			price: priceNum,
-			category,
-			image_url: imageUrl.trim() || '/placeholder.svg?height=300&width=400',
-			available_on_website: availableOnWebsite,
-			available_on_mobile: availableOnMobile,
-		}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Narxi</Label>
+              <Input 
+                required
+                type="number"
+                value={formData.price}
+                onChange={e => setFormData({...formData, price: e.target.value})}
+                className="h-12 rounded-xl border-none bg-slate-50 font-semibold px-5 focus:ring-2 ring-indigo-100 shadow-none" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Kategoriya</Label>
+              <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                <SelectTrigger className="h-12 rounded-xl border-none bg-slate-50 font-semibold shadow-none">
+                  <SelectValue placeholder="Tanlang" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-none shadow-xl bg-white">
+                  {CATEGORIES.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-		console.log("Yuborilayotgan ma'lumot:", JSON.stringify(itemData, null, 2))
+          {/* TAVSIF QISMI (Mana shu joyda description bor) */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Tavsif (Description)</Label>
+            <Textarea 
+              value={formData.description}
+              onChange={e => setFormData({...formData, description: e.target.value})}
+              className="min-h-[80px] rounded-xl border-none bg-slate-50 font-medium p-4 focus:ring-2 ring-indigo-100 resize-none shadow-none" 
+              placeholder="Taom haqida qisqacha ma'lumot..."
+            />
+          </div>
 
-		try {
-			if (editItem) {
-				const { data, error } = await supabase
-					.from('menu_items')
-					.update(itemData)
-					.eq('id', editItem.id)
-					.select()
+          {/* Checkboxlar */}
+          <div className="flex gap-3">
+            <div className={`flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${formData.available_on_website ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50'}`}
+                 onClick={() => setFormData(p => ({...p, available_on_website: !p.available_on_website}))}>
+              <span className="text-[10px] font-bold uppercase text-slate-500">Veb-sayt</span>
+              <Checkbox 
+                checked={formData.available_on_website} 
+                onCheckedChange={(v) => setFormData(p => ({...p, available_on_website: !!v}))}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className={`flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${formData.available_on_mobile ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 bg-slate-50'}`}
+                 onClick={() => setFormData(p => ({...p, available_on_mobile: !p.available_on_mobile}))}>
+              <span className="text-[10px] font-bold uppercase text-slate-500">Mobil</span>
+              <Checkbox 
+                checked={formData.available_on_mobile} 
+                onCheckedChange={(v) => setFormData(p => ({...p, available_on_mobile: !!v}))}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
 
-				if (error) {
-					console.error('Update xatosi:', {
-						message: error.message,
-						details: error.details,
-						hint: error.hint,
-						code: error.code,
-					})
-					throw new Error(error.message || 'Yangilashda xatolik')
-				}
-
-				console.log("Yangilangan ma'lumot:", data)
-				toast('Taom yangilandi', {
-					className:
-						'bg-primary text-primary-foreground border border-primary/30 shadow-lg',
-				})
-			} else {
-				const { data, error } = await supabase
-					.from('menu_items')
-					.insert([itemData])
-					.select()
-
-				if (error) {
-					console.error('Insert xatosi:', {
-						message: error.message,
-						details: error.details,
-						hint: error.hint,
-						code: error.code,
-					})
-					throw new Error(error.message || "Qo'shishda xatolik")
-				}
-
-				console.log("Qo'shilgan ma'lumot:", data)
-				toast("Yangi taom qo'shildi", {
-					className:
-						'bg-primary text-primary-foreground border border-primary/30 shadow-lg',
-				})
-			}
-			onOpenChange(false)
-			resetForm()
-		} catch (error: any) {
-			console.log("To'liq xato obyekti:", error)
-			toast.error(`Xatolik: ${error?.message || "Noma'lum xatolik"}`)
-		} finally {
-			setLoading(false)
-		}
-	}
-
-	const isValid = name && description && price && category
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>
-						{editItem ? 'Taomni tahrirlash' : "Yangi taom qo'shish"}
-					</DialogTitle>
-					<DialogDescription>
-						{editItem
-							? "Taom ma'lumotlarini o'zgartiring"
-							: "Menyuga yangi taom qo'shing"}
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className='space-y-4'>
-					<div>
-						<Label htmlFor='item-name'>Nomi</Label>
-						<Input
-							id='item-name'
-							value={name}
-							onChange={e => setName(e.target.value)}
-						/>
-					</div>
-
-					<div>
-						<Label htmlFor='item-desc'>Tavsif</Label>
-						<Textarea
-							id='item-desc'
-							value={description}
-							onChange={e => setDescription(e.target.value)}
-							rows={2}
-						/>
-					</div>
-
-					<div className='grid grid-cols-2 gap-4'>
-						<div>
-							<Label htmlFor='item-price'>Narxi (so'm)</Label>
-							<Input
-								id='item-price'
-								type='number'
-								value={price}
-								onChange={e => setPrice(e.target.value)}
-							/>
-						</div>
-						<div>
-							<Label htmlFor='item-category'>Kategoriya</Label>
-							<Select value={category} onValueChange={setCategory}>
-								<SelectTrigger className='bg-background'>
-									<SelectValue placeholder='Tanlang' />
-								</SelectTrigger>
-								<SelectContent>
-									{CATEGORIES.map(cat => (
-										<SelectItem key={cat.id} value={cat.id}>
-											{cat.icon} {cat.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
-
-					<div>
-						<Label htmlFor='item-image'>Rasm URL</Label>
-						<Input
-							id='item-image'
-							value={imageUrl}
-							onChange={e => setImageUrl(e.target.value)}
-							placeholder='/placeholder.svg'
-						/>
-					</div>
-
-					<div className='flex gap-6'>
-						<div className='flex items-center gap-2'>
-							<Checkbox
-								id='available-website'
-								checked={availableOnWebsite}
-								onCheckedChange={checked =>
-									handleWebsiteChange(checked as boolean)
-								}
-							/>
-							<Label htmlFor='available-website'>Saytda ko'rsatish</Label>
-						</div>
-						<div className='flex items-center gap-2'>
-							<Checkbox
-								id='available-mobile'
-								checked={availableOnMobile}
-								onCheckedChange={checked =>
-									handleMobileChange(checked as boolean)
-								}
-							/>
-							<Label htmlFor='available-mobile'>Mobileda ko'rsatish</Label>
-						</div>
-					</div>
-				</div>
-
-				<DialogFooter>
-					<Button variant='outline' onClick={() => onOpenChange(false)}>
-						Bekor qilish
-					</Button>
-					<Button onClick={handleSubmit} disabled={!isValid || loading}>
-						{loading ? 'Saqlanmoqda...' : editItem ? 'Saqlash' : "Qo'shish"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	)
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 h-12 rounded-xl font-bold text-slate-400">BEKOR QILISH</Button>
+            <Button type="submit" disabled={loading} className="flex-[1.5] h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-bold shadow-lg transition-all active:scale-95">
+              {loading ? <Loader2 className="animate-spin" /> : 'SAQLASH'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
 }

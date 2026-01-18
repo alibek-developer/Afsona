@@ -1,0 +1,111 @@
+import type { MenuItem, Order } from "./types"
+
+export const mockMenuItems: MenuItem[] = [
+  // Salatlar
+  {
+    id: "1",
+    name: "Achchiq salat",
+    description: "Yangi pomidor, bodring, piyoz va ko'katlar bilan",
+    price: 25000,
+    category: "Salatlar",
+    image_url: "/fresh-uzbek-achichuk-tomato-cucumber-onion-salad.jpg",
+    available_on_mobile: true,
+    available_on_website: true,
+  },
+  {
+    id: "2",
+    name: "Olivye salati",
+    description: "An'anaviy rus salati kartoshka va mayonez bilan",
+    price: 35000,
+    category: "Salatlar",
+    image_url: "/russian-olivier-salad-with-potatoes-and-mayonnaise.jpg",
+    available_on_mobile: true,
+    available_on_website: true,
+  },
+  // Asosiy taomlar
+  {
+    id: "4",
+    name: "Palov",
+    description: "An'anaviy o'zbek palovi mol go'shti, sabzi va ziravorlar bilan",
+    price: 45000,
+    category: "Asosiy taomlar",
+    image_url: "/uzbek-plov-rice-pilaf-with-beef-carrots-and-spices.jpg",
+    available_on_mobile: true,
+    available_on_website: true,
+  },
+  // ... boshqa taomlar shu ko'rinishda (sizning to'liq ro'yxatingizni qo'shishingiz mumkin)
+  // Oxirgi taom misoli
+  {
+    id: "18",
+    name: "Chak-chak",
+    description: "Asalli shirinlik",
+    price: 22000,
+    category: "Shirinliklar",
+    image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?q=80&w=1000&auto=format&fit=crop",
+    available_on_mobile: true,
+    available_on_website: true,
+  },
+]
+
+export const mockOrders: Order[] = [
+  {
+    id: "ORD-001",
+    created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    customer_name: "Aziz Karimov",
+    customer_phone: "+998901234567",
+    mode: "delivery",
+    delivery_address: "Yunusobod tumani, 12-uy",
+    delivery_distance: 4.5,
+    items: [
+      { ...mockMenuItems[0], quantity: 2 },
+      { ...mockMenuItems[3], quantity: 1 },
+    ],
+    subtotal: 98000,
+    delivery_fee: 7500,
+    total: 105500,
+    status: "preparing",
+    source: "website",
+    payment_method: "cash",
+    payment_status: "pending",
+  },
+  {
+    id: "ORD-002",
+    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    customer_name: "Malika Rahimova",
+    customer_phone: "+998909876543",
+    mode: "dine-in",
+    table_number: "5",
+    items: [
+      { ...mockMenuItems[1], quantity: 3 },
+      { ...mockMenuItems[0], quantity: 2 },
+      { ...mockMenuItems[13], quantity: 3 },
+    ],
+    subtotal: 239000,
+    delivery_fee: 0,
+    total: 239000,
+    status: "new",
+    source: "website",
+    payment_method: "card",
+    payment_status: "pending",
+  },
+  {
+    id: "ORD-003",
+    created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+    customer_name: "Bobur Toshmatov",
+    customer_phone: "+998933456789",
+    mode: "delivery",
+    delivery_address: "Mirzo Ulug'bek tumani, 45-uy",
+    delivery_distance: 2.1,
+    items: [
+      { ...mockMenuItems[4], quantity: 2 },
+      { ...mockMenuItems[7], quantity: 1 },
+    ],
+    subtotal: 116000,
+    delivery_fee: 0,
+    total: 116000,
+    status: "ready",
+    source: "call-center",
+    payment_method: "click",
+    payment_status: "pending",
+  },
+]

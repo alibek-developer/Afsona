@@ -1,63 +1,67 @@
 'use client'
-import { Clock, MapPin, Phone } from 'lucide-react'
+import { Clock, MapPin, Phone, UtensilsCrossed } from 'lucide-react'
 import Link from 'next/link'
 
 export function Footer() {
 	return (
-		<footer className='bg-black text-white border-t-2 border-red-500 shadow-[0_-5px_30px_rgba(255,0,0,0.2)]'>
-			<div className='max-w-screen-2xl mx-auto px-6 lg:px-10 py-12'>
-				<div className='grid grid-cols-1 md:grid-cols-3 gap-10'>
-					{/* About - Neon Glow */}
-					<div>
-						<div className='flex items-center gap-3 mb-6'>
-							<div className='w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-white text-2xl font-black shadow-[0_0_20px_rgba(255,0,0,0.6)] border-2 border-red-400'>
-								🍽️
+		<footer className='bg-white text-slate-900 border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]'>
+			<div className='max-w-screen-2xl mx-auto px-6 lg:px-10 py-16'>
+				<div className='grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8'>
+					{/* About Section */}
+					<div className='space-y-6'>
+						<div className='flex items-center gap-3'>
+							<div className='w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-200'>
+								<UtensilsCrossed size={24} />
 							</div>
-							<span className='font-black text-2xl tracking-tight uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
+							<span className='font-black text-2xl tracking-tighter uppercase text-slate-900'>
 								O'zbek Oshxonasi
 							</span>
 						</div>
-						<p className='text-gray-300 leading-relaxed font-medium'>
+						<p className='text-slate-500 leading-relaxed font-medium max-w-sm'>
 							An'anaviy o'zbek taomlari eng sifatli mahsulotlardan tayyorlanadi.
-							Oilaviy muhit va mehmonnavozlik.
+							Bizda har doim oilaviy muhit va haqiqiy mehmondorchilik.
 						</p>
 					</div>
 
-					{/* Contact - Neon Icons */}
+					{/* Contact Section */}
 					<div>
-						<h3 className='font-black text-xl mb-6 uppercase tracking-wider text-white drop-shadow-[0_0_8px_rgba(255,0,0,0.4)]'>
+						<h3 className='font-black text-sm mb-8 uppercase tracking-[0.2em] text-red-600'>
 							Bog'lanish
 						</h3>
-						<div className='flex flex-col gap-4 text-gray-300'>
-							<div className='flex items-center gap-3 group hover:text-red-400 transition-all duration-300'>
-								<div className='w-10 h-10 rounded-lg bg-red-600/20 flex items-center justify-center group-hover:bg-red-600/40 group-hover:shadow-[0_0_15px_rgba(255,0,0,0.4)] transition-all duration-300 border border-red-500/30'>
-									<Phone className='h-5 w-5 text-red-400' />
+						<div className='flex flex-col gap-5'>
+							<div className='flex items-center gap-4 group cursor-pointer'>
+								<div className='w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-red-50 transition-colors duration-300'>
+									<Phone className='h-5 w-5 text-slate-400 group-hover:text-red-600 transition-colors' />
 								</div>
-								<span className='font-bold'>+998 71 123 45 67</span>
-							</div>
-							<div className='flex items-center gap-3 group hover:text-red-400 transition-all duration-300'>
-								<div className='w-10 h-10 rounded-lg bg-red-600/20 flex items-center justify-center group-hover:bg-red-600/40 group-hover:shadow-[0_0_15px_rgba(255,0,0,0.4)] transition-all duration-300 border border-red-500/30'>
-									<MapPin className='h-5 w-5 text-red-400' />
-								</div>
-								<span className='font-bold'>
-									Toshkent sh., Amir Temur ko'chasi, 1-uy
+								<span className='font-bold text-slate-700 group-hover:text-red-600 transition-colors'>
+									+998 71 123 45 67
 								</span>
 							</div>
-							<div className='flex items-center gap-3 group hover:text-red-400 transition-all duration-300'>
-								<div className='w-10 h-10 rounded-lg bg-red-600/20 flex items-center justify-center group-hover:bg-red-600/40 group-hover:shadow-[0_0_15px_rgba(255,0,0,0.4)] transition-all duration-300 border border-red-500/30'>
-									<Clock className='h-5 w-5 text-red-400' />
+
+							<div className='flex items-center gap-4 group cursor-pointer'>
+								<div className='w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-red-50 transition-colors duration-300'>
+									<MapPin className='h-5 w-5 text-slate-400 group-hover:text-red-600 transition-colors' />
 								</div>
-								<span className='font-bold'>Har kuni: 10:00 - 23:00</span>
+								<span className='font-bold text-slate-700 group-hover:text-red-600 transition-colors leading-tight'>
+									Toshkent sh., Amir Temur, 1-uy
+								</span>
+							</div>
+
+							<div className='flex items-center gap-4 group'>
+								<div className='w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center'>
+									<Clock className='h-5 w-5 text-slate-400' />
+								</div>
+								<span className='font-bold text-slate-700'>10:00 - 23:00</span>
 							</div>
 						</div>
 					</div>
 
-					{/* Links - Neon Hover */}
+					{/* Quick Links */}
 					<div>
-						<h3 className='font-black text-xl mb-6 uppercase tracking-wider text-white drop-shadow-[0_0_8px_rgba(255,0,0,0.4)]'>
+						<h3 className='font-black text-sm mb-8 uppercase tracking-[0.2em] text-red-600'>
 							Havolalar
 						</h3>
-						<div className='flex flex-col gap-3'>
+						<div className='flex flex-col gap-4'>
 							{[
 								{ href: '/menu', label: 'Menyu' },
 								{ href: '/about', label: 'Biz haqimizda' },
@@ -66,19 +70,29 @@ export function Footer() {
 								<Link
 									key={link.href}
 									href={link.href}
-									className='text-gray-300 hover:text-red-400 transition-all duration-300 font-bold uppercase tracking-wide hover:translate-x-2 hover:drop-shadow-[0_0_8px_rgba(255,0,0,0.5)] inline-block'
+									className='text-slate-500 hover:text-red-600 transition-all duration-300 font-bold uppercase text-xs tracking-widest flex items-center gap-2 group'
 								>
-									→ {link.label}
+									<span className='w-0 h-[2px] bg-red-600 group-hover:w-4 transition-all duration-300'></span>
+									{link.label}
 								</Link>
 							))}
 						</div>
 					</div>
 				</div>
 
-				<div className='border-t-2 border-red-500/30 mt-10 pt-8 text-center'>
-					<p className='text-gray-400 font-bold uppercase tracking-widest text-sm'>
+				{/* Bottom Copyright */}
+				<div className='border-t border-slate-100 mt-16 pt-10 flex flex-col md:flex-row justify-between items-center gap-4'>
+					<p className='text-slate-400 font-bold uppercase tracking-widest text-[10px]'>
 						© 2026 O'zbek Oshxonasi. Barcha huquqlar himoyalangan.
 					</p>
+					<div className='flex gap-6'>
+						<span className='text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-600 cursor-pointer transition-colors'>
+							Instagram
+						</span>
+						<span className='text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-600 cursor-pointer transition-colors'>
+							Telegram
+						</span>
+					</div>
 				</div>
 			</div>
 		</footer>

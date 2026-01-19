@@ -26,8 +26,6 @@ function MenuContent() {
 			const { data, error } = await supabase
 				.from('menu_items')
 				.select('*')
-				// DIQQAT: Agar bazada 'available_on_website' false bo'lsa, chiqmaydi.
-				// Tekshirish uchun vaqtincha filtrni olib tashlashingiz mumkin:
 				.order('created_at', { ascending: false })
 
 			if (error) {
@@ -46,12 +44,8 @@ function MenuContent() {
 		setSelectedCategory(searchParams.get('category'))
 	}, [searchParams])
 
-	// Filtrlash mantiqi
 	const filteredItems = items.filter(item => {
-		// 1. Agar admin panelda "Saytda" (available_on_website) belgilanmagan bo'lsa, ko'rsatmaydi
 		if (item.available_on_website !== true) return false
-
-		// 2. Kategoriya bo'yicha filtr
 		if (
 			selectedCategory &&
 			selectedCategory !== 'all' &&
@@ -64,56 +58,71 @@ function MenuContent() {
 
 	if (loading) {
 		return (
-			<div className='text-center py-16 text-muted-foreground'>
-				<p>Yuklanmoqda...</p>
+			<div className='flex flex-col items-center justify-center py-20 animate-pulse'>
+				<div className='w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4'></div>
+				<p className='text-gray-500 font-medium'>Menyu yuklanmoqda...</p>
 			</div>
 		)
 	}
 
 	return (
-		<>
+		<div className='max-w-[1400px] mx-auto px-4 md:px-8'>
+			{/* Sarlavha qismi */}
 			<div className='mb-12 text-center'>
-				<h1 className='text-5xl md:text-6xl font-black mb-4 text-black uppercase tracking-tighter drop-shadow-sm'>
+				<h1 className='text-5xl md:text-7xl font-black mb-3 text-black uppercase tracking-tighter'>
 					MENYU
 				</h1>
-				<p className='text-gray-500 font-bold tracking-widest uppercase text-xs'>
-					Zamonaviy Taomlar
-				</p>
-				<CategoryFilter
-					selected={selectedCategory}
-					onSelect={setSelectedCategory}
-				/>
+				<div className='flex items-center justify-center gap-4 mb-10'>
+					<div className='h-[2px] w-8 md:w-12 bg-red-600'></div>
+					<p className='text-gray-500 font-bold tracking-[0.3em] uppercase text-[10px] md:text-xs'>
+						Zamonaviy Taomlar
+					</p>
+					<div className='h-[2px] w-8 md:w-12 bg-red-600'></div>
+				</div>
+
+				{/* Filtrlarni o'rtaga olish */}
+				<div className='inline-block w-full overflow-x-auto pb-4 no-scrollbar'>
+					<CategoryFilter
+						selected={selectedCategory}
+						onSelect={setSelectedCategory}
+					/>
+				</div>
 			</div>
 
+			{/* Grid tizimi: Katta ekranda ham markazda turishi uchun max-w va mx-auto */}
 			{filteredItems.length === 0 ? (
-				<div className='text-center py-16 text-muted-foreground'>
-					<p>
-						Hozircha taomlar mavjud emas yoki tanlangan kategoriyada taom
-						topilmadi.
+				<div className='text-center py-20 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200'>
+					<p className='text-gray-400 font-medium'>
+						Hozircha ushbu bo'limda taomlar mavjud emas.
 					</p>
 				</div>
 			) : (
-				<div className='grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto'>
-					{filteredItems.map(item => (
-						<MenuCard key={item.id} item={item} />
-					))}
+				<div className='flex justify-center'>
+					<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10 w-full'>
+						{filteredItems.map(item => (
+							<div key={item.id} className='flex justify-center'>
+								<MenuCard item={item} />
+							</div>
+						))}
+					</div>
 				</div>
 			)}
-		</>
+		</div>
 	)
 }
 
 export default function MenuPage() {
 	return (
-		<div className='py-12'>
+		<div className='min-h-screen bg-white py-12 md:py-20'>
 			<Suspense
-				fallback={<div className='text-center py-16'>Yuklanmoqda...</div>}
+				fallback={
+					<div className='text-center py-20 font-bold tracking-widest'>
+						YUKLANMOQDA...
+					</div>
+				}
 			>
 				<MenuContent />
 			</Suspense>
 		</div>
 	)
 }
-
-// Client componentda 'export const revalidate' ishlamaydi,
-// lekin useEffect ichidagi setLoading va fetch har gal sahifa yuklanganda ishlaydi.

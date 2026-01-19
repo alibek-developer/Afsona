@@ -17,14 +17,17 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Narxni formatlash
  */
-export const formatPrice = (price: number) => {
+export const formatPrice = (price: number | null | undefined) => {
+	// Null yoki undefined bo'lsa, 0 ga o'rnatamiz
+	const numPrice = price ?? 0
+	
 	// User requested "so'm" without space or specific formatting fix
 	// Standard space formatting for numbers but tight "so'm" interaction
 	return new Intl.NumberFormat('uz-UZ', {
 		style: 'decimal',
 		maximumFractionDigits: 0,
 	})
-		.format(price)
+		.format(numPrice)
 		.replace(/,/g, ' ') + "so'm"
 }
 

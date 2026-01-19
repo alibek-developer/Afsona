@@ -26,6 +26,9 @@ export interface Order {
 	subtotal: number
 	delivery_fee: number
 	total: number
+	// Supabase bazasidagi ustunlar
+	total_amount?: number | null
+	grand_total?: number | null
 	status: 'new' | 'preparing' | 'ready' | 'delivered'
 	source: 'website' | 'mobile' | 'call-center'
 	payment_method: 'cash' | 'card' | 'click' | 'payme'

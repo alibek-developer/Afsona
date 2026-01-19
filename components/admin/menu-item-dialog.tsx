@@ -26,25 +26,25 @@ export function MenuItemDialog({ open, onOpenChange, editItem }: any) {
   })
 
   useEffect(() => {
-    if (open) {
-      if (editItem) {
-        setFormData({
-          name: editItem.name || '',
-          description: editItem.description || '',
-          price: editItem.price?.toString() || '',
-          category: editItem.category || '',
-          image_url: editItem.image_url || '',
-          available_on_website: !!editItem.available_on_website,
-          available_on_mobile: !!editItem.available_on_mobile,
-        });
-      } else {
-        setFormData({
-          name: '', description: '', price: '', category: '', image_url: '',
-          available_on_website: true, available_on_mobile: true,
-        });
-      }
+    if (!open) return;
+    
+    if (editItem?.id) {
+      setFormData({
+        name: editItem.name || '',
+        description: editItem.description || '',
+        price: editItem.price?.toString() || '',
+        category: editItem.category || '',
+        image_url: editItem.image_url || '',
+        available_on_website: !!editItem.available_on_website,
+        available_on_mobile: !!editItem.available_on_mobile,
+      });
+    } else {
+      setFormData({
+        name: '', description: '', price: '', category: '', image_url: '',
+        available_on_website: true, available_on_mobile: true,
+      });
     }
-  }, [open, editItem]);
+  }, [open, editItem?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -142,8 +142,11 @@ export function MenuItemDialog({ open, onOpenChange, editItem }: any) {
               <span className="text-[10px] font-bold uppercase text-slate-500">Veb-sayt</span>
               <Checkbox 
                 checked={formData.available_on_website} 
-                onCheckedChange={(v) => setFormData(p => ({...p, available_on_website: !!v}))}
+                onCheckedChange={(v) => {
+                  setFormData(p => ({...p, available_on_website: !!v}));
+                }}
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
             <div className={`flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${formData.available_on_mobile ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 bg-slate-50'}`}
@@ -151,8 +154,11 @@ export function MenuItemDialog({ open, onOpenChange, editItem }: any) {
               <span className="text-[10px] font-bold uppercase text-slate-500">Mobil</span>
               <Checkbox 
                 checked={formData.available_on_mobile} 
-                onCheckedChange={(v) => setFormData(p => ({...p, available_on_mobile: !!v}))}
+                onCheckedChange={(v) => {
+                  setFormData(p => ({...p, available_on_mobile: !!v}));
+                }}
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>

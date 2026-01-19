@@ -8,8 +8,9 @@ import './globals.css'
 const jetbrainsMono = JetBrains_Mono({
 	subsets: ['latin'],
 	weight: ['400', '500', '600', '700'],
-	variable: '--font-mono-next',
+	variable: '--font-mono',
 	display: 'swap',
+	fallback: ['monospace'],
 })
 
 export const metadata: Metadata = {

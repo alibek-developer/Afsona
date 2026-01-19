@@ -46,7 +46,11 @@ export default function AdminOrdersPage() {
   }, [])
 
   const fetchOrders = async () => {
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('orders')
+      // Note: DB schema confirmed to NOT have delivery_distance/subtotal; keep only known columns
+      .select('id, created_at, customer_name, customer_phone, mode, table_number, delivery_address, items, total_amount, delivery_fee, grand_total, status')
+      .order('created_at', { ascending: false })
     if (!error) {
       const nextOrders = (data as Order[]) || []
       const prevIds = prevOrderIdsRef.current
@@ -145,7 +149,9 @@ export default function AdminOrdersPage() {
                     {/* Total Price */}
                     <div className='w-40 text-right border-l border-slate-50 px-6'>
                       <p className='text-[10px] font-black text-slate-400 uppercase mb-1'>Umumiy Summa</p>
-                      <Price value={order.total || 0} className='text-xl font-black text-slate-900 tracking-tighter' />
+                      <span className='text-xl font-black text-slate-900 tracking-tighter'>
+                        {(order.grand_total ?? 0).toLocaleString('uz-UZ')} so'm
+                      </span>
                     </div>
 
                     {/* Status Select Tool */}

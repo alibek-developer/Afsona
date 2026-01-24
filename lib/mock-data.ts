@@ -1,50 +1,39 @@
 import type { MenuItem, Order } from "./types"
 
 export const mockMenuItems: MenuItem[] = [
-  // Salatlar
   {
     id: "1",
     name: "Achchiq salat",
     description: "Yangi pomidor, bodring, piyoz va ko'katlar bilan",
     price: 25000,
-    category: "Salatlar",
+    category: "XAMIRLI TAOMLAR", // Types dagi CATEGORIES ID siga moslandi
     image_url: "/fresh-uzbek-achichuk-tomato-cucumber-onion-salad.jpg",
     available_on_mobile: true,
     available_on_website: true,
+    is_active: true
   },
-  {
-    id: "2",
-    name: "Olivye salati",
-    description: "An'anaviy rus salati kartoshka va mayonez bilan",
-    price: 35000,
-    category: "Salatlar",
-    image_url: "/russian-olivier-salad-with-potatoes-and-mayonnaise.jpg",
-    available_on_mobile: true,
-    available_on_website: true,
-  },
-  // Asosiy taomlar
   {
     id: "4",
     name: "Palov",
     description: "An'anaviy o'zbek palovi mol go'shti, sabzi va ziravorlar bilan",
     price: 45000,
-    category: "Asosiy taomlar",
+    category: "MILLIY GO'SHTLI TAOMLAR",
     image_url: "/uzbek-plov-rice-pilaf-with-beef-carrots-and-spices.jpg",
     available_on_mobile: true,
     available_on_website: true,
+    is_active: true
   },
-  // ... boshqa taomlar shu ko'rinishda (sizning to'liq ro'yxatingizni qo'shishingiz mumkin)
-  // Oxirgi taom misoli
   {
     id: "18",
     name: "Chak-chak",
     description: "Asalli shirinlik",
     price: 22000,
-    category: "Shirinliklar",
+    category: "ICHIMLIKLAR", // Mavjud kategoriyaga vaqtincha biriktirildi
     image_url: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?q=80&w=1000&auto=format&fit=crop",
     available_on_mobile: true,
     available_on_website: true,
-  },
+    is_active: true
+  }
 ]
 
 export const mockOrders: Order[] = [
@@ -52,60 +41,34 @@ export const mockOrders: Order[] = [
     id: "ORD-001",
     created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     customer_name: "Aziz Karimov",
-    customer_phone: "+998901234567",
+    phone: "+998901234567", // customer_phone -> phone ga o'zgartirildi
     mode: "delivery",
+    type: "delivery", // Baza uchun qo'shimcha type maydoni
     delivery_address: "Yunusobod tumani, 12-uy",
-    delivery_distance: 4.5,
     items: [
-      { ...mockMenuItems[0], quantity: 2 },
-      { ...mockMenuItems[3], quantity: 1 },
+      { id: "1", name: "Achchiq salat", price: 25000, quantity: 2 },
+      { id: "4", name: "Palov", price: 45000, quantity: 1 }
     ],
-    subtotal: 98000,
-    delivery_fee: 7500,
-    total: 105500,
+    total_amount: 95000, // total -> total_amount ga o'zgartirildi
+    delivery_fee: 5000,
     status: "preparing",
     source: "website",
-    payment_method: "cash",
-    payment_status: "pending",
+    payment_method: "cash"
   },
   {
     id: "ORD-002",
     created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
     customer_name: "Malika Rahimova",
-    customer_phone: "+998909876543",
+    phone: "+998909876543",
     mode: "dine-in",
+    type: "restaurant",
     table_number: "5",
     items: [
-      { ...mockMenuItems[1], quantity: 3 },
-      { ...mockMenuItems[0], quantity: 2 },
-      { ...mockMenuItems[13], quantity: 3 },
+      { id: "1", name: "Achchiq salat", price: 25000, quantity: 1 }
     ],
-    subtotal: 239000,
-    delivery_fee: 0,
-    total: 239000,
+    total_amount: 25000,
     status: "new",
-    source: "website",
-    payment_method: "card",
-    payment_status: "pending",
-  },
-  {
-    id: "ORD-003",
-    created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    customer_name: "Bobur Toshmatov",
-    customer_phone: "+998933456789",
-    mode: "delivery",
-    delivery_address: "Mirzo Ulug'bek tumani, 45-uy",
-    delivery_distance: 2.1,
-    items: [
-      { ...mockMenuItems[4], quantity: 2 },
-      { ...mockMenuItems[7], quantity: 1 },
-    ],
-    subtotal: 116000,
-    delivery_fee: 0,
-    total: 116000,
-    status: "ready",
-    source: "call-center",
-    payment_method: "click",
-    payment_status: "pending",
-  },
+    source: "mobile",
+    payment_method: "card"
+  }
 ]

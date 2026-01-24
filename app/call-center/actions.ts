@@ -12,30 +12,29 @@ export async function submitOrder(orderData: any) {
 	// User requested explicit fields
 	const payload = {
 		customer_name: orderData.customer_name,
-		customer_phone: orderData.customer_phone,
+		phone: orderData.phone,
 		items: orderData.items.map((item: any) => ({
 			id: item.item.id,
 			name: item.item.name,
 			price: item.item.price,
 			quantity: item.quantity,
 		})),
-		total_amount: orderData.total, // User requested total_amount
+		total_amount: orderData.total_amount,
 		delivery_fee: orderData.delivery_fee || 0,
-		mode: orderData.mode,
+		type: orderData.mode, // Use 'type' instead of 'mode'
 		table_number: orderData.table_number,
 		delivery_address: orderData.delivery_address,
-		status: 'yangi',
-		source_channel: 'call-center',
-		payment_method: 'naqd', // User requested "naqd" or similar
-		// Removed payment_status
+		status: 'new',
+		source: 'call-center',
+		payment_method: (orderData.payment_method || 'cash').toLowerCase(), // Lowercase payment_method
 	}
 
 	console.log('Admin Insert Payload:', JSON.stringify(payload, null, 2))
 
 	try {
-		const { data, error } = await supabaseAdmin
+		const { data, error } = await (supabaseAdmin
 			.from('orders')
-			.insert([payload])
+			.insert([payload] as any) as any)
 			.select()
 
 		if (error) {

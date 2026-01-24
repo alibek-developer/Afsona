@@ -59,8 +59,8 @@ export function NewPhoneOrderDialog({
 				orderItems.map(item =>
 					item.id === selectedItemId
 						? { ...item, quantity: item.quantity + 1 }
-						: item
-				)
+						: item,
+				),
 			)
 		} else {
 			setOrderItems([...orderItems, { ...menuItem, quantity: 1 }])
@@ -73,7 +73,7 @@ export function NewPhoneOrderDialog({
 			setOrderItems(orderItems.filter(item => item.id !== id))
 		} else {
 			setOrderItems(
-				orderItems.map(item => (item.id === id ? { ...item, quantity } : item))
+				orderItems.map(item => (item.id === id ? { ...item, quantity } : item)),
 			)
 		}
 	}
@@ -84,7 +84,7 @@ export function NewPhoneOrderDialog({
 
 	const subtotal = orderItems.reduce(
 		(sum, item) => sum + item.price * item.quantity,
-		0
+		0,
 	)
 
 	const handleSubmit = () => {
@@ -92,18 +92,21 @@ export function NewPhoneOrderDialog({
 			id: generateOrderId(),
 			created_at: new Date().toISOString(),
 			customer_name: customerName,
-			customer_phone: customerPhone,
+			phone: customerPhone,
 			mode: orderMode,
 			table_number: orderMode === 'dine-in' ? tableNumber : undefined,
 			delivery_address: orderMode === 'delivery' ? deliveryAddress : undefined,
-			items: orderItems,
-			subtotal,
+			items: orderItems.map(item => ({
+				id: item.id,
+				name: item.name,
+				price: item.price,
+				quantity: item.quantity,
+			})),
 			delivery_fee: 0,
-			total: subtotal,
+			total_amount: subtotal,
 			status: 'new',
 			source: 'call-center',
 			payment_method: paymentMethod,
-			payment_status: 'pending',
 		}
 		addOrder(order)
 		resetForm()

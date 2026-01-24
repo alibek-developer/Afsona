@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
+import { ThemeProvider } from 'next-themes'
 import { JetBrains_Mono } from 'next/font/google'
 import type React from 'react'
 import { Toaster } from 'sonner'
@@ -43,11 +44,18 @@ export default function RootLayout({
 	children: React.ReactNode
 }>) {
 	return (
-		<html lang='uz'>
+		<html lang='uz' suppressHydrationWarning>
 			<body className={`${jetbrainsMono.variable} font-sans antialiased`}>
-				{children}
-				<Toaster position='top-right' />
-				<Analytics />
+				<ThemeProvider
+					attribute='class'
+					defaultTheme='system'
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+					<Toaster position='top-right' />
+					<Analytics />
+				</ThemeProvider>
 			</body>
 		</html>
 	)

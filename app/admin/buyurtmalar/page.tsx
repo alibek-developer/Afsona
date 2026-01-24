@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Price } from '@/components/ui/price'
 import {
 	Select,
 	SelectContent,
@@ -10,170 +9,210 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { supabase } from '@/lib/supabaseClient'
-import type { Order } from '@/lib/types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Clock, Hash, Loader2, MapPin, User } from 'lucide-react'
+import { Clock, Hash, Loader2, MapPin, Phone, Utensils } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 const STATUS_LABELS: Record<string, string> = {
-  new: 'Yangi Buyurtma',
-  preparing: 'Tayyorlanmoqda',
-  ready: 'Tayyor / Kutmoqda',
-  delivered: 'Yetkazib berildi',
+	yangi: 'Yangi',
+	new: 'Yangi',
+	tayyorlanmoqda: 'Tayyorlanmoqda',
+	preparing: 'Tayyorlanmoqda',
+	yakunlandi: 'Yakunlandi',
+	ready: 'Yakunlandi',
 }
-
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-600',
-  preparing: 'bg-amber-500',
-  ready: 'bg-emerald-500',
-  delivered: 'bg-slate-300',
+	yangi: 'bg-blue-600',
+	new: 'bg-blue-600',
+	tayyorlanmoqda: 'bg-amber-500',
+	preparing: 'bg-amber-500',
+	yakunlandi: 'bg-emerald-500',
+	ready: 'bg-emerald-500',
 }
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const prevOrderIdsRef = useRef<Set<string>>(new Set())
-  const [highlightedOrderIds, setHighlightedOrderIds] = useState<Record<string, number>>({})
+	const [orders, setOrders] = useState<any[]>([])
+	const [loading, setLoading] = useState(true)
+	const [darkMode, setDarkMode] = useState(false)
+	const prevOrderIdsRef = useRef<Set<string>>(new Set())
+	const [highlightedOrderIds, setHighlightedOrderIds] = useState<
+		Record<string, number>
+	>({})
 
-  useEffect(() => {
-    fetchOrders()
-    const channel = supabase
-      .channel('admin_orders_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
+	useEffect(() => {
+		const isDark = document.documentElement.classList.contains('dark')
+		setDarkMode(isDark)
+		fetchOrders()
+		const channel = supabase
+			.channel('sync')
+			.on(
+				'postgres_changes',
+				{ event: '*', schema: 'public', table: 'orders' },
+				() => fetchOrders(),
+			)
+			.subscribe()
+		return () => {
+			supabase.removeChannel(channel)
+		}
+	}, [])
 
-  const fetchOrders = async () => {
-    const { data, error } = await supabase
-      .from('orders')
-      // Note: DB schema confirmed to NOT have delivery_distance/subtotal; keep only known columns
-      .select('id, created_at, customer_name, customer_phone, mode, table_number, delivery_address, items, total_amount, delivery_fee, grand_total, status')
-      .order('created_at', { ascending: false })
-    if (!error) {
-      const nextOrders = (data as Order[]) || []
-      const prevIds = prevOrderIdsRef.current
-      const now = Date.now()
-      const newHighlights: Record<string, number> = {}
-      nextOrders.forEach(o => { if (!prevIds.has(o.id)) newHighlights[o.id] = now })
-      prevOrderIdsRef.current = new Set(nextOrders.map(o => o.id))
-      setHighlightedOrderIds(prev => ({ ...prev, ...newHighlights }))
-      setOrders(nextOrders)
-    }
-    setLoading(false)
-  }
+	const fetchOrders = async () => {
+		const { data, error } = await supabase
+			.from('orders')
+			.select(
+				'id, created_at, customer_name, phone, type, delivery_address, items, total_amount, status',
+			)
+			.order('created_at', { ascending: false })
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
-    if (!error) {
-      toast.success('Status muvaffaqiyatli yangilandi')
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus as any } : o))
-    }
-  }
+		if (!error) {
+			const nextOrders = data || []
+			const prevIds = prevOrderIdsRef.current
+			const now = Date.now()
+			const newHighlights: Record<string, number> = {}
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-slate-900" size={32} /></div>
+			nextOrders.forEach(o => {
+				if (prevIds.size > 0 && !prevIds.has(o.id)) newHighlights[o.id] = now
+			})
+			prevOrderIdsRef.current = new Set(nextOrders.map(o => o.id))
+			setHighlightedOrderIds(prev => ({ ...prev, ...newHighlights }))
+			setOrders(nextOrders)
+		}
+		setLoading(false)
+	}
 
-  return (
-    <div className='space-y-6 max-w-[1200px] mx-auto p-4'>
-      <div className='flex justify-between items-center mb-8'>
-        <div>
-          <h1 className='text-3xl font-black tracking-tight text-slate-900'>Buyurtmalar Oqimi</h1>
-          <p className='text-sm font-bold text-slate-400 uppercase tracking-[0.2em]'>Jonli monitoring tizimi</p>
-        </div>
-        <div className='bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4'>
-            <div>
-              <p className='text-[10px] font-black text-slate-400 uppercase'>Bugungi jami</p>
-              <p className='text-2xl font-black leading-none text-slate-900'>{orders.length}</p>
-            </div>
-            <div className='w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600'>
-              <Hash size={20} />
-            </div>
-        </div>
-      </div>
+	const handleStatusChange = async (id: string, status: string) => {
+		const { error } = await supabase
+			.from('orders')
+			.update({ status })
+			.eq('id', id)
+		if (!error) toast.success('Status yangilandi')
+	}
 
-      <div className='flex flex-col gap-3'>
-        <AnimatePresence mode='popLayout'>
-          {orders.map(order => (
-            <motion.div 
-              key={order.id} 
-              initial={{ opacity: 0, x: -10 }} 
-              animate={{ opacity: 1, x: 0 }} 
-              exit={{ opacity: 0, scale: 0.95 }}
-              layout
-            >
-              <Card className={`border-none shadow-sm transition-all overflow-hidden bg-white ${highlightedOrderIds[order.id] ? 'ring-2 ring-blue-500 shadow-blue-100' : ''}`}>
-                <CardContent className='p-0 flex items-stretch h-[85px]'>
-                  <div className={`w-2 ${STATUS_COLORS[order.status]} transition-colors`} />
-                  
-                  <div className='flex-1 flex items-center px-6 gap-8'>
-                    {/* Time & ID */}
-                    <div className='w-24 shrink-0'>
-                      <div className='flex items-center gap-1.5 text-slate-400 mb-1'>
-                        <Clock size={14} />
-                        <span className='text-xs font-black'>
-                          {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className='text-sm font-black text-slate-900 tracking-tight'>#{order.id.slice(0, 6).toUpperCase()}</p>
-                    </div>
+	if (loading)
+		return (
+			<div className='flex h-screen items-center justify-center bg-[#F1F5F9] dark:bg-slate-950 transition-colors'>
+				<Loader2 className='animate-spin text-red-500' size={32} />
+			</div>
+		)
 
-                    {/* Customer Info */}
-                    <div className='w-56 shrink-0 border-l border-slate-50 pl-6'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100'>
-                          <User size={18} />
-                        </div>
-                        <div className='min-w-0'>
-                          <p className='text-sm font-black text-slate-900 truncate'>{order.customer_name}</p>
-                          <p className='text-xs font-bold text-slate-400 mt-0.5'>{order.customer_phone}</p>
-                        </div>
-                      </div>
-                    </div>
+	return (
+		<div className='p-6 max-w-[1400px] mx-auto space-y-6 bg-[#F1F5F9] dark:bg-slate-950 min-h-screen transition-colors'>
+			<div className='flex justify-between items-center mb-10'>
+				<h1 className='text-4xl font-black uppercase tracking-tighter dark:text-white'>
+					Buyurtmalar
+				</h1>
+				<div className='bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm dark:shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors'>
+					<span className='text-3xl font-black dark:text-white'>
+						{orders.length}
+					</span>
+					<Hash className='text-slate-400 dark:text-slate-600' />
+				</div>
+			</div>
 
-                    {/* Location / Table */}
-                    <div className='flex-1 min-w-0 border-l border-slate-50 pl-6'>
-                      <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5'>Joylashuv</p>
-                      <div className='flex items-center gap-2'>
-                        {order.mode === 'dine-in' ? (
-                          <span className='px-3 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-black shadow-sm'>STOL #{order.table_number}</span>
-                        ) : (
-                          <div className='flex items-center gap-2 truncate text-slate-700 font-bold text-sm'>
-                            <MapPin size={16} className='text-red-500 shrink-0' /> 
-                            <span className="truncate">{order.delivery_address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+			<div className='flex flex-col gap-4'>
+				<AnimatePresence mode='popLayout'>
+					{orders.map(order => (
+						<motion.div
+							key={order.id}
+							layout
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+						>
+							<Card
+								className={`border-none overflow-hidden bg-white dark:bg-slate-900 transition-all ${
+									highlightedOrderIds[order.id]
+										? 'ring-4 ring-blue-500 dark:ring-blue-600 shadow-lg dark:shadow-[0_0_25px_rgba(37,99,235,0.3)]'
+										: 'shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.2)]'
+								}`}
+							>
+								<CardContent className='p-0 flex items-stretch'>
+									<div
+										className={`w-2 ${STATUS_COLORS[order.status]} dark:opacity-80`}
+									/>
+									<div className='flex-1 flex items-center p-6 gap-8'>
+										<div className='w-32'>
+											<div className='flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs font-bold'>
+												<Clock size={12} />{' '}
+												{new Date(order.created_at).toLocaleTimeString([], {
+													hour: '2-digit',
+													minute: '2-digit',
+												})}
+											</div>
+											<p className='font-black text-sm uppercase dark:text-white'>
+												ID: {order.id.slice(-6)}
+											</p>
+										</div>
+										<div className='w-64 border-l border-slate-200 dark:border-slate-800 pl-6'>
+											<p className='font-black uppercase text-sm dark:text-white'>
+												{order.customer_name}
+											</p>
+											<div className='flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs'>
+												<Phone size={12} /> {order.phone}
+											</div>
+										</div>
+										<div className='flex-1 border-l border-slate-200 dark:border-slate-800 pl-6'>
+											<div className='flex items-center gap-2'>
+												{order.type === 'dine-in' ? (
+													<Utensils
+														size={16}
+														className='text-blue-500 dark:text-blue-400'
+													/>
+												) : (
+													<MapPin
+														size={16}
+														className='text-red-500 dark:text-red-400'
+													/>
+												)}
+												<span className='font-bold text-sm dark:text-white'>
+													{order.delivery_address}
+												</span>
+											</div>
+										</div>
+										<div className='w-40 text-right border-l border-slate-200 dark:border-slate-800 px-6'>
+											<p className='text-2xl font-black dark:text-white'>
+												{(order.total_amount || 0).toLocaleString()}{' '}
+												<span className='text-xs dark:text-slate-400'>
+													so'm
+												</span>
+											</p>
+										</div>
+										<div className='w-56 border-l border-slate-200 dark:border-slate-800 pl-6'>
+											<Select
+												value={order.status}
+												onValueChange={v => handleStatusChange(order.id, v)}
+											>
+												<SelectTrigger className='font-black uppercase text-[10px] bg-white dark:bg-slate-800 dark:text-white border-slate-200 dark:border-slate-700 dark:hover:border-slate-600 transition-colors'>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent className='bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'>
+													{Object.entries(STATUS_LABELS).map(([k, v]) => (
+														<SelectItem
+															key={k}
+															value={k}
+															className='font-bold uppercase text-xs dark:text-white dark:hover:bg-slate-800'
+														>
+															{v}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
+									</div>
+								</CardContent>
+							</Card>
+						</motion.div>
+					))}
+				</AnimatePresence>
 
-                    {/* Total Price */}
-                    <div className='w-40 text-right border-l border-slate-50 px-6'>
-                      <p className='text-[10px] font-black text-slate-400 uppercase mb-1'>Umumiy Summa</p>
-                      <span className='text-xl font-black text-slate-900 tracking-tighter'>
-                        {(order.grand_total ?? 0).toLocaleString('uz-UZ')} so'm
-                      </span>
-                    </div>
-
-                    {/* Status Select Tool */}
-                    <div className='w-48 shrink-0'>
-                       <Select value={order.status} onValueChange={(val) => handleStatusChange(order.id, val)}>
-                        <SelectTrigger className='h-12 bg-slate-50 border-none font-black text-xs rounded-xl hover:bg-slate-100 transition-colors'>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className='rounded-xl border-none shadow-xl'>
-                          {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key} className='py-3 font-bold text-xs'>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
-  )
+				{orders.length === 0 && (
+					<div className='text-center py-20'>
+						<p className='text-slate-500 dark:text-slate-400 font-bold text-lg'>
+							Buyurtmalar topilmadi
+						</p>
+					</div>
+				)}
+			</div>
+		</div>
+	)
 }

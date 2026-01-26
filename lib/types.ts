@@ -33,12 +33,19 @@ export interface Order {
 	items: SavedOrderItem[]
 	total_amount: number
 	delivery_fee?: number
-	status: 'new' | 'preparing' | 'ready' | 'yangi' | 'tayyorlanmoqda' | 'yakunlandi'
+	status:
+		| 'new'
+		| 'preparing'
+		| 'ready'
+		| 'yangi'
+		| 'tayyorlanmoqda'
+		| 'yakunlandi'
 	source: 'website' | 'mobile' | 'call-center'
 	payment_method: 'cash' | 'card' | 'click' | 'payme'
 }
 
 export const CATEGORIES = [
+	{ id: 'COMBO', name: 'Combo', icon: '🥤' },
 	{ id: 'XAMIRLI TAOMLAR', name: 'Xamirli taomlar', icon: '🥟' },
 	{ id: 'SUYUQ OVQATLAR', name: 'Suyuq ovqatlar', icon: '🍲' },
 	{ id: 'SHASHLIK', name: 'Shashliklar', icon: '🍢' },
@@ -48,7 +55,6 @@ export const CATEGORIES = [
 		icon: '🍽️',
 	},
 	{ id: 'BALIQ', name: 'Baliq taomlari', icon: '🐟' },
-	{ id: 'ICHIMLIKLAR', name: 'Ichimliklar', icon: '🥤' },
 ] as const
 export const FREE_DELIVERY_DISTANCE_KM = 3
 export const FREE_DELIVERY_MIN_TOTAL = 300000

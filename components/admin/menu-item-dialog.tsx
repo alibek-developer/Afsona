@@ -26,7 +26,6 @@ export function MenuItemDialog({
 	refreshData,
 }: any) {
 	const [loading, setLoading] = useState(false)
-	const [darkMode, setDarkMode] = useState(false)
 	const [formData, setFormData] = useState({
 		name: '',
 		description: '',
@@ -38,13 +37,7 @@ export function MenuItemDialog({
 	})
 
 	useEffect(() => {
-		const isDark = document.documentElement.classList.contains('dark')
-		setDarkMode(isDark)
-	}, [])
-
-	useEffect(() => {
 		if (!open) return
-
 		if (editItem) {
 			setFormData({
 				name: editItem.name || '',
@@ -71,12 +64,8 @@ export function MenuItemDialog({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		if (!formData.category) return toast.error('Kategoriyani tanlang')
-
 		setLoading(true)
-		const itemData = {
-			...formData,
-			price: parseFloat(formData.price) || 0,
-		}
+		const itemData = { ...formData, price: parseFloat(formData.price) || 0 }
 
 		try {
 			const { error } = editItem
@@ -87,17 +76,9 @@ export function MenuItemDialog({
 				: await supabase.from('menu_items').insert([itemData])
 
 			if (error) throw error
-
-			toast.success(
-				editItem ? 'Muvaffaqiyatli yangilandi' : "Yangi taom qo'shildi",
-			)
+			toast.success(editItem ? 'Yangilandi!' : "Qo'shildi!")
 			onOpenChange(false)
-
-			if (refreshData) {
-				refreshData()
-			} else {
-				window.location.reload()
-			}
+			refreshData?.()
 		} catch (err: any) {
 			toast.error(err.message)
 		} finally {
@@ -105,46 +86,45 @@ export function MenuItemDialog({
 		}
 	}
 
+	// Ixcham input stili
+	const inputStyles =
+		'h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 focus:border-indigo-500 transition-all font-medium text-sm'
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className='max-w-[550px] p-0 overflow-hidden border-none shadow-2xl dark:shadow-[0_0_50px_rgba(239,68,68,0.2)] rounded-[30px] bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors'>
-				<div className='bg-[#0f172a] dark:bg-slate-800 p-6 text-white flex items-center gap-4 border-b border-slate-700 dark:border-slate-700'>
-					<div className='w-12 h-12 rounded-2xl bg-indigo-500/20 dark:bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 dark:border-indigo-400/40'>
-						<UtensilsCrossed
-							size={24}
-							className='text-indigo-400 dark:text-indigo-300'
-						/>
+			<DialogContent className='max-w-[440px] max-h-[90vh] overflow-y-auto p-0 border-none rounded-[2rem] bg-white dark:bg-slate-900 shadow-2xl'>
+				{/* Header - Android Style */}
+				<div className='bg-slate-900 dark:bg-black p-5 text-white flex items-center gap-4'>
+					<div className='w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center'>
+						<UtensilsCrossed size={20} />
 					</div>
 					<div>
-						<DialogTitle className='text-xl font-bold uppercase tracking-tight dark:text-white'>
-							{editItem ? 'Taomni tahrirlash' : 'Yangi Taom'}
+						<DialogTitle className='text-lg font-bold uppercase tracking-tight'>
+							{editItem ? 'Tahrirlash' : 'Yangi Taom'}
 						</DialogTitle>
-						<p className='text-[9px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5'>
-							Admin boshqaruv paneli
+						<p className='text-[10px] opacity-50 font-bold uppercase tracking-widest'>
+							Admin Panel
 						</p>
 					</div>
 				</div>
 
-				<form
-					onSubmit={handleSubmit}
-					className='p-6 space-y-4 dark:bg-slate-900'
-				>
-					{/* Nomi */}
+				<form onSubmit={handleSubmit} className='p-6 space-y-4'>
 					<div className='space-y-1.5'>
-						<Label className='text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 ml-1'>
+						<Label className='text-[10px] font-black uppercase text-slate-400 ml-1'>
 							Taom nomi
 						</Label>
 						<Input
 							required
 							value={formData.name}
 							onChange={e => setFormData({ ...formData, name: e.target.value })}
-							className='h-12 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white font-semibold px-5 focus:ring-2 ring-indigo-100 dark:ring-indigo-500/30 shadow-none placeholder-slate-400 dark:placeholder-slate-500'
+							className={inputStyles}
+							placeholder='Masalan: Milliy Palov'
 						/>
 					</div>
 
-					<div className='grid grid-cols-2 gap-4'>
+					<div className='grid grid-cols-2 gap-3'>
 						<div className='space-y-1.5'>
-							<Label className='text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 ml-1'>
+							<Label className='text-[10px] font-black uppercase text-slate-400 ml-1'>
 								Narxi
 							</Label>
 							<Input
@@ -154,26 +134,26 @@ export function MenuItemDialog({
 								onChange={e =>
 									setFormData({ ...formData, price: e.target.value })
 								}
-								className='h-12 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white font-semibold px-5 focus:ring-2 ring-indigo-100 dark:ring-indigo-500/30 shadow-none placeholder-slate-400 dark:placeholder-slate-500'
+								className={inputStyles}
 							/>
 						</div>
 						<div className='space-y-1.5'>
-							<Label className='text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 ml-1'>
+							<Label className='text-[10px] font-black uppercase text-slate-400 ml-1'>
 								Kategoriya
 							</Label>
 							<Select
 								value={formData.category}
 								onValueChange={v => setFormData({ ...formData, category: v })}
 							>
-								<SelectTrigger className='h-12 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white font-semibold shadow-none placeholder-slate-400 dark:placeholder-slate-500'>
+								<SelectTrigger className={inputStyles}>
 									<SelectValue placeholder='Tanlang' />
 								</SelectTrigger>
-								<SelectContent className='rounded-xl border-none shadow-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'>
+								<SelectContent className='rounded-xl border-slate-200 font-bold'>
 									{CATEGORIES.map(c => (
 										<SelectItem
 											key={c.id}
 											value={c.id}
-											className='dark:text-white dark:hover:bg-slate-700'
+											className='text-xs uppercase'
 										>
 											{c.name}
 										</SelectItem>
@@ -183,25 +163,23 @@ export function MenuItemDialog({
 						</div>
 					</div>
 
-					{/* Tavsif */}
 					<div className='space-y-1.5'>
-						<Label className='text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 ml-1'>
-							Tavsif (Description)
+						<Label className='text-[10px] font-black uppercase text-slate-400 ml-1'>
+							Tavsif
 						</Label>
 						<Textarea
 							value={formData.description}
 							onChange={e =>
 								setFormData({ ...formData, description: e.target.value })
 							}
-							className='min-h-[80px] rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white font-medium p-4 focus:ring-2 ring-indigo-100 dark:ring-indigo-500/30 resize-none shadow-none placeholder-slate-400 dark:placeholder-slate-500'
-							placeholder="Taom haqida qisqacha ma'lumot..."
+							className='min-h-[80px] rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 resize-none text-sm'
+							placeholder='Taom tarkibi...'
 						/>
 					</div>
 
-					{/* Rasm URL */}
 					<div className='space-y-1.5'>
-						<Label className='text-[10px] font-bold uppercase text-indigo-500 dark:text-indigo-400 ml-1'>
-							Rasm URL (Image URL)
+						<Label className='text-[10px] font-black uppercase text-slate-400 ml-1'>
+							Rasm URL
 						</Label>
 						<div className='relative'>
 							<Input
@@ -209,85 +187,64 @@ export function MenuItemDialog({
 								onChange={e =>
 									setFormData({ ...formData, image_url: e.target.value })
 								}
-								className='h-12 rounded-xl border-none bg-indigo-50 dark:bg-indigo-950/30 dark:text-white font-medium pl-11 pr-5 focus:ring-2 ring-indigo-100 dark:ring-indigo-500/30 shadow-none placeholder-slate-400 dark:placeholder-slate-500'
-								placeholder='https://misol.uz/rasm.jpg'
+								className={`pl-10 ${inputStyles}`}
+								placeholder='https://...'
 							/>
 							<LinkIcon
-								size={18}
-								className='absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 dark:text-indigo-300'
+								size={16}
+								className='absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400'
 							/>
 						</div>
 					</div>
 
-					{/* Checkboxlar */}
-					<div className='flex gap-3'>
-						<div
-							className={`flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-								formData.available_on_website
-									? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30'
-									: 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
-							}`}
-							onClick={() =>
-								setFormData(p => ({
-									...p,
-									available_on_website: !p.available_on_website,
-								}))
-							}
-						>
-							<span className='text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400'>
-								Veb-sayt
-							</span>
-							<Checkbox
-								checked={formData.available_on_website}
-								onCheckedChange={v =>
-									setFormData(p => ({ ...p, available_on_website: !!v }))
+					{/* Switchers - Tozalandi */}
+					<div className='flex gap-2'>
+						{[
+							{ id: 'available_on_website', label: 'Veb-sayt' },
+							{ id: 'available_on_mobile', label: 'Mobil' },
+						].map(sw => (
+							<div
+								key={sw.id}
+								onClick={() =>
+									setFormData(p => ({ ...p, [sw.id]: !(p as any)[sw.id] }))
 								}
-								onClick={e => e.stopPropagation()}
-								className='dark:border-slate-600 dark:bg-slate-700'
-							/>
-						</div>
-						<div
-							className={`flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-								formData.available_on_mobile
-									? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
-									: 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
-							}`}
-							onClick={() =>
-								setFormData(p => ({
-									...p,
-									available_on_mobile: !p.available_on_mobile,
-								}))
-							}
-						>
-							<span className='text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400'>
-								Mobil
-							</span>
-							<Checkbox
-								checked={formData.available_on_mobile}
-								onCheckedChange={v =>
-									setFormData(p => ({ ...p, available_on_mobile: !!v }))
-								}
-								onClick={e => e.stopPropagation()}
-								className='dark:border-slate-600 dark:bg-slate-700'
-							/>
-						</div>
+								className={`flex-1 flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+									(formData as any)[sw.id]
+										? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/10'
+										: 'border-slate-100 dark:border-slate-800 bg-slate-50/50'
+								}`}
+							>
+								<span className='text-[10px] font-bold uppercase text-slate-500'>
+									{sw.label}
+								</span>
+								<Checkbox
+									checked={(formData as any)[sw.id]}
+									className='rounded-md border-slate-300'
+								/>
+							</div>
+						))}
 					</div>
 
+					{/* Actions - Android Style Buttons */}
 					<div className='flex gap-3 pt-2'>
 						<Button
 							type='button'
 							variant='ghost'
 							onClick={() => onOpenChange(false)}
-							className='flex-1 h-12 rounded-xl font-bold text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
+							className='flex-1 h-12 rounded-xl font-bold uppercase text-xs'
 						>
-							BEKOR QILISH
+							Bekor qilish
 						</Button>
 						<Button
 							type='submit'
 							disabled={loading}
-							className='flex-[1.5] h-12 rounded-xl bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-700 text-white font-bold shadow-lg dark:shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all active:scale-95'
+							className='flex-[1.5] h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold uppercase text-xs shadow-lg shadow-indigo-500/20'
 						>
-							{loading ? <Loader2 className='animate-spin' /> : 'SAQLASH'}
+							{loading ? (
+								<Loader2 className='animate-spin' size={18} />
+							) : (
+								'Saqlash'
+							)}
 						</Button>
 					</div>
 				</form>

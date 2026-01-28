@@ -38,7 +38,23 @@ export default function RootLayout({
 					disableTransitionOnChange
 				>
 					{children}
-					<Toaster position='top-right' />
+					<Toaster
+						richColors
+						closeButton
+						position='bottom-right'
+						toastOptions={{
+							style: {
+								background: 'rgba(255, 255, 255, 0.4)', // Shaffof oq fon
+								backdropFilter: 'blur(12px)', // Orqa fonni xiralashtirish (Glass)
+								WebkitBackdropFilter: 'blur(12px)',
+								border: '1px solid rgba(255, 255, 255, 0.2)', // Nozik chegara
+								boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)', // Yumshoq soya
+								borderRadius: '20px', // Dumaloq dizayn
+								color: '#000', // Matn rangi
+							},
+							className: 'glass-toast-animation', // Maxsus animatsiya klassi
+						}}
+					/>
 					<Analytics />
 				</ThemeProvider>
 			</body>

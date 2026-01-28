@@ -3,298 +3,368 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Price } from '@/components/ui/price'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
+import { supabase } from '@/lib/supabaseClient'
+import type { MenuItem } from '@/lib/types'
 import { CATEGORIES } from '@/lib/types'
+import { useAuthGuard } from '@/lib/useAuth'
+import { cn } from '@/lib/utils'
 import {
-	Hash,
 	Loader2,
 	LogOut,
-	MapPin,
 	Minus,
+	Moon,
 	Plus,
 	Search,
 	ShoppingBag,
+	Sun,
 } from 'lucide-react'
-
-// ... (importlar o'zgarishsiz qoladi)
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { submitOrder } from './actions'
 
 export default function ProfessionalCallCenter() {
-	// ... (statelar va funksiyalar o'zgarishsiz qoladi)
+	const { loading: authLoading } = useAuthGuard({
+		allowRoles: ['admin', 'operator'],
+	})
 
-	// Neobrutalizm uchun umumiy klasslar
-	const brutalBorder =
-		'border-4 border-black dark:border-slate-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-none'
-	const brutalInput =
-		'border-2 border-black dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-0 focus:border-red-500 rounded-xl font-bold transition-all'
+	// State-lar
+	const [items, setItems] = useState<MenuItem[]>([])
+	const [loading, setLoading] = useState(true)
+	const [submitting, setSubmitting] = useState(false)
+	const [searchTerm, setSearchTerm] = useState('')
+	const [darkMode, setDarkMode] = useState(false)
+
+	const [customerName, setCustomerName] = useState('')
+	const [phone, setPhone] = useState('')
+	const [mode, setMode] = useState<'delivery' | 'dine-in'>('delivery')
+	const [address, setAddress] = useState('')
+	const [tableNumber, setTableNumber] = useState('')
+	const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([])
+
+	useEffect(() => {
+		const savedTheme = localStorage.getItem('theme')
+		const isDark =
+			savedTheme === 'dark' ||
+			(!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+		setDarkMode(isDark)
+	}, [])
+
+	useEffect(() => {
+		if (darkMode) {
+			document.documentElement.classList.add('dark')
+			localStorage.setItem('theme', 'dark')
+		} else {
+			document.documentElement.classList.remove('dark')
+			localStorage.setItem('theme', 'light')
+		}
+	}, [darkMode])
+
+	useEffect(() => {
+		fetchItems()
+	}, [])
+
+	const fetchItems = async () => {
+		const { data, error } = await supabase
+			.from('menu_items')
+			.select('*')
+			.or('available_on_website.eq.true,is_active.eq.true')
+			.order('category')
+		if (!error) setItems(data || [])
+		setLoading(false)
+	}
+
+	const handleSignOut = async () => {
+		try {
+			const { error } = await supabase.auth.signOut()
+			if (error) throw error
+			toast.success('Tizimdan chiqildi')
+			window.location.href = '/login'
+		} catch (error: any) {
+			toast.error('Xatolik: ' + error.message)
+		}
+	}
+
+	const addToCart = (item: MenuItem) => {
+		setCart(prev => {
+			const existing = prev.find(i => i.item.id === item.id)
+			if (existing) {
+				return prev.map(i =>
+					i.item.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
+				)
+			}
+			return [...prev, { item, quantity: 1 }]
+		})
+	}
+
+	const updateQuantity = (itemId: string, delta: number) => {
+		setCart(prev =>
+			prev
+				.map(i =>
+					i.item.id === itemId
+						? { ...i, quantity: Math.max(0, i.quantity + delta) }
+						: i,
+				)
+				.filter(i => i.quantity > 0),
+		)
+	}
+
+	const calculateTotal = () =>
+		cart.reduce((sum, { item, quantity }) => sum + item.price * quantity, 0)
+
+	const handleSubmit = async () => {
+		if (cart.length === 0) return toast.error("Savatcha bo'sh")
+		if (!customerName || !phone)
+			return toast.error("Mijoz ma'lumotlarini kiriting")
+
+		setSubmitting(true)
+		const orderData = {
+			customer_name: customerName,
+			phone: phone,
+			mode,
+			delivery_address: mode === 'delivery' ? address : null,
+			table_number: mode === 'dine-in' ? tableNumber : null,
+			items: cart,
+			total_amount: calculateTotal(),
+			payment_method: 'cash',
+		}
+
+		try {
+			const result = await submitOrder(orderData)
+			if (result.success) {
+				toast.success('Buyurtma qabul qilindi!')
+				setCustomerName('')
+				setPhone('')
+				setAddress('')
+				setTableNumber('')
+				setCart([])
+			} else {
+				toast.error('Xatolik: ' + (result.message || 'Nomaʼlum xatolik'))
+			}
+		} catch (e) {
+			toast.error('Tizimda xatolik yuz berdi')
+		} finally {
+			setSubmitting(false)
+		}
+	}
+
+	if (authLoading || loading)
+		return (
+			<div className='h-screen flex items-center justify-center bg-white dark:bg-slate-950'>
+				<Loader2 className='animate-spin text-red-500' size={40} />
+			</div>
+		)
 
 	return (
-		<div className='min-h-screen bg-[#F8FAFC] dark:bg-slate-950 font-sans antialiased text-slate-900 dark:text-white transition-colors duration-300'>
-			{/* Header - Yanada qalinroq va ajralib turadigan */}
-			<header className='bg-white dark:bg-slate-900 border-b-4 border-black dark:border-slate-800 sticky top-0 z-50 transition-colors'>
-				<div className='max-w-[1800px] mx-auto px-8 h-24 flex items-center justify-between'>
+		<div className='min-h-screen bg-[#F1F5F9] dark:bg-slate-950 font-sans antialiased text-slate-900 dark:text-white'>
+			<header className='bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50'>
+				<div className='max-w-[1800px] mx-auto px-8 h-20 flex items-center justify-between'>
 					<div className='flex items-center gap-4'>
-						<div className='w-14 h-14 bg-red-500 rounded-2xl flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white'>
-							<ShoppingBag size={28} strokeWidth={3} />
+						<div className='w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center text-white'>
+							<ShoppingBag size={24} />
 						</div>
-						<div>
-							<h1 className='text-2xl font-black tracking-tighter uppercase leading-none'>
-								CALL-CENTER <span className='text-red-500'>PRO</span>
-							</h1>
-							<p className='text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1'>
-								Operator Terminal v2.0
-							</p>
-						</div>
+						<h1 className='text-xl font-black uppercase'>CALL-CENTER PANEL</h1>
 					</div>
-
-					<div className='flex items-center gap-3'>
-						{/* Dark Mode toggle - brutal style */}
-						<Button
-							variant='outline'
+					<div className='flex items-center gap-4'>
+						<button
 							onClick={() => setDarkMode(!darkMode)}
-							className='border-2 border-black rounded-xl font-bold hover:bg-yellow-400 transition-colors'
+							className='p-2.5 rounded-lg border border-slate-300 dark:border-slate-700'
 						>
-							{darkMode ? 'YORUG‘' : 'TUNGI'}
-						</Button>
+							{darkMode ? <Sun className='text-yellow-500' /> : <Moon />}
+						</button>
 						<Button
+							variant='ghost'
 							onClick={handleSignOut}
-							className='h-12 rounded-xl bg-black hover:bg-red-600 text-white font-black px-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(239,68,68,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none'
+							className='font-black'
 						>
-							<LogOut className='h-5 w-5 mr-2' /> CHIQUV
+							<LogOut className='mr-2' /> CHIQUV
 						</Button>
 					</div>
 				</div>
 			</header>
 
-			<main className='max-w-[1800px] mx-auto p-8 gap-8 grid grid-cols-12 h-[calc(100vh-100px)]'>
-				{/* LEFT: Menu Section */}
-				<div className='col-span-7 flex flex-col gap-6'>
+			{/* h-full va overflow-hidden olib tashlandi */}
+			<main className='max-w-[1800px] mx-auto p-8 grid grid-cols-12 gap-8'>
+				{/* LEFT: Menu Section - ScrollArea o'rniga h-fit div ishlatildi */}
+				<div className='col-span-8 space-y-6 h-fit'>
 					<div className='relative'>
 						<Search
-							className='absolute left-5 top-1/2 -translate-y-1/2 text-black'
-							size={24}
+							className='absolute left-5 top-1/2 -translate-y-1/2 text-slate-400'
+							size={22}
 						/>
 						<input
 							type='text'
-							placeholder='Qidiruv (masalan: Lavash, Coca-cola...)'
-							className={`w-full h-20 pl-16 pr-6 rounded-2xl text-xl placeholder-slate-400 ${brutalInput}`}
+							placeholder='Taom qidirish...'
+							className='w-full bg-white dark:bg-slate-900 h-16 pl-14 pr-6 rounded-2xl shadow-sm outline-none font-bold'
 							onChange={e => setSearchTerm(e.target.value)}
 						/>
 					</div>
 
-					<ScrollArea
-						className={`flex-1 bg-white dark:bg-slate-900 rounded-[2rem] ${brutalBorder}`}
-					>
-						<div className='p-8 space-y-12'>
-							{CATEGORIES.map(category => {
-								const catItems = items.filter(
-									i =>
-										i.category.toUpperCase() === category.id.toUpperCase() &&
-										i.name.toLowerCase().includes(searchTerm.toLowerCase()),
-								)
-								if (catItems.length === 0) return null
-								return (
-									<div key={category.id} className='space-y-6'>
-										<div className='flex items-center gap-4'>
-											<div className='bg-black text-white px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest'>
-												{category.name}
-											</div>
-											<div className='h-1 bg-black/5 dark:bg-white/5 flex-1' />
-										</div>
-										<div className='grid grid-cols-2 xl:grid-cols-3 gap-6'>
-											{catItems.map(item => (
-												<button
-													key={item.id}
-													onClick={() => addToCart(item)}
-													className='group p-6 rounded-2xl border-2 border-black bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950 transition-all text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1'
-												>
-													<div className='flex justify-between items-start mb-4'>
-														<p className='font-black text-lg leading-tight uppercase'>
-															{item.name}
-														</p>
-														<div className='bg-red-500 text-white p-1 rounded-lg'>
-															<Plus size={20} strokeWidth={3} />
-														</div>
-													</div>
-													<Price
-														value={item.price}
-														className='text-sm font-black opacity-60'
-													/>
-												</button>
-											))}
-										</div>
+					<div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 space-y-10'>
+						{CATEGORIES.map(category => {
+							const catItems = items.filter(
+								i =>
+									i.category.toUpperCase() === category.id.toUpperCase() &&
+									i.name.toLowerCase().includes(searchTerm.toLowerCase()),
+							)
+							if (catItems.length === 0) return null
+							return (
+								<div key={category.id}>
+									<div className='flex items-center gap-3 mb-6'>
+										<span className='text-2xl'>{category.icon}</span>
+										<h3 className='font-black uppercase tracking-widest text-sm'>
+											{category.name}
+										</h3>
+										<div className='h-px bg-slate-100 dark:bg-slate-800 flex-1 ml-4' />
 									</div>
-								)
-							})}
-						</div>
-					</ScrollArea>
+									<div className='grid grid-cols-2 xl:grid-cols-3 gap-4'>
+										{catItems.map(item => (
+											<button
+												key={item.id}
+												onClick={() => addToCart(item)}
+												className='p-6 rounded-3xl border bg-white dark:bg-slate-800 hover:border-red-500 transition-all text-left relative'
+											>
+												<p className='font-black text-lg'>{item.name}</p>
+												<Price
+													value={item.price}
+													className='text-sm text-slate-400 font-black'
+												/>
+												<div className='absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-700 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all'>
+													<Plus size={20} />
+												</div>
+											</button>
+										))}
+									</div>
+								</div>
+							)
+						})}
+					</div>
 				</div>
 
-				{/* RIGHT: Order Form Section */}
-				<div className='col-span-5 h-full'>
-					<Card
-						className={`h-full flex flex-col bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden ${brutalBorder}`}
-					>
-						<CardHeader className='p-8 bg-black text-white'>
-							<CardTitle className='text-xl font-black flex justify-between items-center italic tracking-tighter'>
-								OPERATOR: {customerName || '...'}
-								<span className='not-italic text-[10px] bg-red-500 px-3 py-1 rounded-full animate-pulse'>
-									ACTIVE
-								</span>
-							</CardTitle>
-						</CardHeader>
+				{/* RIGHT: Order Form - Sticky qilindi */}
+				<div className='col-span-4'>
+					<div className='sticky top-28 h-fit'>
+						<Card className='border-none shadow-2xl rounded-[3rem] flex flex-col bg-white dark:bg-slate-900'>
+							<CardHeader className='p-8 pb-4 border-b dark:border-slate-800'>
+								<CardTitle className='text-xl font-black flex justify-between'>
+									YANGI BUYURTMA{' '}
+									<span className='text-[10px] bg-red-100 text-red-500 px-3 py-1 rounded-full'>
+										LIVE
+									</span>
+								</CardTitle>
+							</CardHeader>
 
-						<CardContent className='p-8 space-y-8 flex-1 overflow-y-auto'>
-							<div className='grid grid-cols-2 gap-4'>
-								<div className='space-y-2'>
-									<Label className='text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1'>
-										Mijoz ismi
-									</Label>
+							<CardContent className='p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar'>
+								<div className='grid grid-cols-2 gap-4'>
 									<Input
 										value={customerName}
 										onChange={e => setCustomerName(e.target.value)}
-										placeholder='Ism...'
-										className={`h-14 ${brutalInput}`}
+										placeholder='Ismi'
+										className='h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold'
 									/>
-								</div>
-								<div className='space-y-2'>
-									<Label className='text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1'>
-										Telefon raqami
-									</Label>
 									<Input
 										value={phone}
 										onChange={e => setPhone(e.target.value)}
 										placeholder='+998'
-										className={`h-14 ${brutalInput}`}
+										className='h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold'
 									/>
 								</div>
-							</div>
 
-							{/* Service Mode Selector */}
-							<div className='grid grid-cols-2 gap-4'>
-								{[
-									{
-										id: 'delivery',
-										label: 'YETKAZIB BERISH',
-										icon: <MapPin size={20} />,
-									},
-									{
-										id: 'dine-in',
-										label: 'ZALDA (STOL)',
-										icon: <Hash size={20} />,
-									},
-								].map(s => (
+								<div className='grid grid-cols-2 gap-3'>
 									<button
-										key={s.id}
-										onClick={() => setMode(s.id as any)}
-										className={`h-16 rounded-xl border-2 font-black flex items-center justify-center gap-3 transition-all ${
-											mode === s.id
-												? 'bg-black text-white border-black scale-105'
-												: 'border-slate-200 text-slate-400 hover:border-black hover:text-black'
-										}`}
+										onClick={() => setMode('delivery')}
+										className={cn(
+											'h-14 rounded-2xl border-2 font-black transition-all',
+											mode === 'delivery'
+												? 'border-red-500 bg-red-50 text-red-600'
+												: 'border-slate-50 bg-slate-50 text-slate-400',
+										)}
 									>
-										{s.icon} {s.label}
+										YETKAZISH
 									</button>
-								))}
-							</div>
+									<button
+										onClick={() => setMode('dine-in')}
+										className={cn(
+											'h-14 rounded-2xl border-2 font-black transition-all',
+											mode === 'dine-in'
+												? 'border-red-500 bg-red-50 text-red-600'
+												: 'border-slate-50 bg-slate-50 text-slate-400',
+										)}
+									>
+										ZALDA
+									</button>
+								</div>
 
-							<div className='space-y-2'>
-								<Label className='text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1'>
-									{mode === 'delivery'
-										? 'Yetkazib berish manzili'
-										: 'Stol raqami'}
-								</Label>
 								{mode === 'delivery' ? (
 									<Textarea
 										value={address}
 										onChange={e => setAddress(e.target.value)}
-										className={`min-h-[100px] p-4 ${brutalInput}`}
-										placeholder='Ko‘cha, uy raqami, mo‘ljal...'
+										placeholder='Manzil...'
+										className='rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold p-4'
 									/>
 								) : (
 									<Input
 										value={tableNumber}
 										onChange={e => setTableNumber(e.target.value)}
-										className={`h-14 ${brutalInput}`}
-										placeholder='Masalan: 12'
+										placeholder='Stol raqami'
+										className='h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold'
 									/>
 								)}
-							</div>
 
-							{/* Savatcha qismi - List ko'rinishida */}
-							<div className='pt-6 border-t-2 border-slate-100 dark:border-slate-800'>
-								<h4 className='text-xs font-black uppercase mb-4 tracking-widest text-slate-400'>
-									Tanlangan mahsulotlar ({cart.length})
-								</h4>
-								<div className='space-y-3'>
+								<div className='space-y-3 pt-4 border-t dark:border-slate-800'>
 									{cart.map(({ item, quantity }) => (
 										<div
 											key={item.id}
-											className='flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-black'
+											className='flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl'
 										>
 											<div className='flex-1'>
-												<p className='font-black text-sm uppercase'>
-													{item.name}
-												</p>
+												<p className='font-black text-sm'>{item.name}</p>
 												<Price
 													value={item.price * quantity}
-													className='text-xs font-bold text-red-500'
+													className='text-xs text-red-500 font-bold'
 												/>
 											</div>
-											<div className='flex items-center bg-black rounded-lg p-1 text-white gap-2'>
-												<button
-													onClick={() => updateQuantity(item.id, -1)}
-													className='p-1 hover:bg-red-500 rounded transition-colors'
-												>
+											<div className='flex items-center bg-white dark:bg-slate-700 rounded-lg p-1 gap-2'>
+												<button onClick={() => updateQuantity(item.id, -1)}>
 													<Minus size={14} />
 												</button>
-												<span className='w-8 text-center font-black'>
-													{quantity}
-												</span>
-												<button
-													onClick={() => addToCart(item)}
-													className='p-1 hover:bg-red-500 rounded transition-colors'
-												>
+												<span className='font-black text-sm'>{quantity}</span>
+												<button onClick={() => addToCart(item)}>
 													<Plus size={14} />
 												</button>
 											</div>
 										</div>
 									))}
 								</div>
-							</div>
-						</CardContent>
+							</CardContent>
 
-						{/* Footer: Hisob-kitob va Yuborish */}
-						<div className='p-8 bg-slate-50 dark:bg-slate-800 border-t-4 border-black'>
-							<div className='flex justify-between items-center mb-6'>
-								<div>
-									<p className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'>
-										To'lov summasi
-									</p>
-									<Price
-										value={calculateTotal()}
-										className='text-4xl font-black tracking-tighter'
-									/>
+							<div className='p-8 pt-4 border-t dark:border-slate-800'>
+								<div className='flex justify-between items-end mb-6'>
+									<div>
+										<p className='text-[10px] font-black text-slate-400 uppercase'>
+											Umumiy
+										</p>
+										<Price
+											value={calculateTotal()}
+											className='text-3xl font-black'
+										/>
+									</div>
 								</div>
-								<div className='bg-emerald-500 text-white font-black px-4 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'>
-									NAQD
-								</div>
+								<Button
+									onClick={handleSubmit}
+									disabled={submitting || cart.length === 0}
+									className='w-full h-16 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-lg font-black'
+								>
+									{submitting ? (
+										<Loader2 className='animate-spin' />
+									) : (
+										'TASDIQLASH'
+									)}
+								</Button>
 							</div>
-							<Button
-								onClick={handleSubmit}
-								disabled={submitting || cart.length === 0}
-								className='w-full h-20 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-xl font-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all'
-							>
-								{submitting ? (
-									<Loader2 className='animate-spin' />
-								) : (
-									'BUYURTMANI TASDIQLASH'
-								)}
-							</Button>
-						</div>
-					</Card>
+						</Card>
+					</div>
 				</div>
 			</main>
 		</div>

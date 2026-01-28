@@ -64,7 +64,7 @@ export function Header() {
 					<nav className='hidden md:flex items-center gap-8'>
 						{[
 							{ href: '/', label: 'Bosh sahifa' },
-							{ href: '/menu', label: 'Menyu' },
+							{ href: '/menu', label: 'Menu' },
 							{ href: '/about', label: 'Biz haqimizda' },
 						].map(link => (
 							<Link

@@ -1,40 +1,20 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { ThemeProvider } from 'next-themes'
-import { JetBrains_Mono } from 'next/font/google'
 import type React from 'react'
 import { Toaster } from 'sonner'
 import './globals.css'
 
-const jetbrainsMono = JetBrains_Mono({
-	subsets: ['latin'],
-	weight: ['400', '500', '600', '700'],
-	variable: '--font-mono',
-	display: 'swap',
-	fallback: ['monospace'],
-})
+// Eslatma: Shrift xatosi chiqmasligi uchun standart tizim shriftlaridan foydalanamiz.
+// Keyinchalik Turbopack-siz rejimda Google Fonts'ni qaytarish mumkin.
 
 export const metadata: Metadata = {
-	title: "O'zbek Oshxonasi | Milliy taomlar",
+	title: 'Afsona | Milliy taomlar',
 	description:
 		"Eng mazali o'zbek taomlari - Palov, Lag'mon, Manti va boshqalar. Yetkazib berish xizmati mavjud.",
-	generator: 'v0.app',
 	icons: {
-		icon: [
-			{
-				url: '/icon-light-32x32.png',
-				media: '(prefers-color-scheme: light)',
-			},
-			{
-				url: '/icon-dark-32x32.png',
-				media: '(prefers-color-scheme: dark)',
-			},
-			{
-				url: '/icon.svg',
-				type: 'image/svg+xml',
-			},
-		],
-		apple: '/apple-icon.png',
+		icon: '/logo.jpg',
+		apple: '/logo.jpg',
 	},
 }
 
@@ -45,10 +25,15 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang='uz' suppressHydrationWarning>
-			<body className={`${jetbrainsMono.variable} font-sans antialiased`}>
+			<body
+				className='antialiased'
+				style={{
+					fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+				}}
+			>
 				<ThemeProvider
 					attribute='class'
-					defaultTheme='system'
+					defaultTheme='dark' // Logotipingiz qora fonda bo'lgani uchun 'dark' tavsiya etiladi
 					enableSystem
 					disableTransitionOnChange
 				>

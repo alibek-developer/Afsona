@@ -1,281 +1,265 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabaseClient'
-import { cn } from '@/lib/utils' // Muhim import
+import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Box, Clock, Loader2, MapPin, Phone, Utensils } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import {
+	Calendar,
+	ChevronLeft,
+	ChevronRight,
+	Clock,
+	Loader2,
+	MapPin,
+	Package,
+	Phone,
+	User,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-const STATUS_LABELS: Record<string, string> = {
-	yangi: 'Yangi',
-	new: 'Yangi',
-	tayyorlanmoqda: 'Jarayonda',
-	preparing: 'Jarayonda',
-	ready: 'Tayyor',
-	yakunlandi: 'Tayyor',
-}
-
-const STATUS_COLORS: Record<string, string> = {
-	yangi: 'bg-blue-600',
-	new: 'bg-blue-600',
-	tayyorlanmoqda: 'bg-amber-500',
-	preparing: 'bg-amber-500',
-	ready: 'bg-emerald-500',
-	yakunlandi: 'bg-emerald-500',
+// Statuslar uchun ranglar xaritasi - Har ikki rejimga moslashtirildi
+const STATUS_MAP = {
+	yangi: {
+		label: 'Yangi',
+		color: 'text-blue-600 dark:text-blue-400',
+		bg: 'bg-blue-50 dark:bg-blue-500/10',
+		border: 'border-blue-200 dark:border-blue-500/20',
+	},
+	tayyorlanmoqda: {
+		label: 'Jarayonda',
+		color: 'text-amber-600 dark:text-amber-400',
+		bg: 'bg-amber-50 dark:bg-amber-500/10',
+		border: 'border-amber-200 dark:border-amber-500/20',
+	},
+	ready: {
+		label: 'Tayyor',
+		color: 'text-emerald-600 dark:text-emerald-400',
+		bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+		border: 'border-emerald-200 dark:border-emerald-500/20',
+	},
+	yakunlandi: {
+		label: 'Tugadi',
+		color: 'text-slate-500 dark:text-slate-400',
+		bg: 'bg-slate-50 dark:bg-slate-500/10',
+		border: 'border-slate-200 dark:border-slate-500/20',
+	},
 }
 
 export default function AdminOrdersPage() {
 	const [orders, setOrders] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
-	const prevOrderIdsRef = useRef<Set<string>>(new Set())
-	const [highlightedOrderIds, setHighlightedOrderIds] = useState<
-		Record<string, number>
-	>({})
+	const [selectedDate, setSelectedDate] = useState(
+		new Date().toISOString().split('T')[0],
+	)
+
+	const [page, setPage] = useState(1)
+	const [totalCount, setTotalCount] = useState(0)
+	const itemsPerPage = 8
+
+	const fetchOrders = async () => {
+		setLoading(true)
+		const start = `${selectedDate}T00:00:00.000Z`
+		const end = `${selectedDate}T23:59:59.999Z`
+
+		const from = (page - 1) * itemsPerPage
+		const to = from + itemsPerPage - 1
+
+		const { data, error, count } = await supabase
+			.from('orders')
+			.select('*', { count: 'exact' })
+			.gte('created_at', start)
+			.lte('created_at', end)
+			.order('created_at', { ascending: false })
+			.range(from, to)
+
+		if (!error) {
+			setOrders(data || [])
+			setTotalCount(count || 0)
+		}
+		setLoading(false)
+	}
 
 	useEffect(() => {
 		fetchOrders()
 		const channel = supabase
-			.channel('sync_orders')
+			.channel('orders-sync')
 			.on(
 				'postgres_changes',
 				{ event: '*', schema: 'public', table: 'orders' },
 				() => fetchOrders(),
 			)
 			.subscribe()
-
 		return () => {
 			supabase.removeChannel(channel)
 		}
-	}, [])
+	}, [selectedDate, page])
 
-	const fetchOrders = async () => {
-		const { data, error } = await supabase
-			.from('orders')
-			.select(
-				'id, created_at, customer_name, phone, type, delivery_address, items, total_amount, status',
-			)
-			.order('created_at', { ascending: false })
+	const totalPages = Math.ceil(totalCount / itemsPerPage)
 
-		if (!error) {
-			const nextOrders = data || []
-			const prevIds = prevOrderIdsRef.current
-			const now = Date.now()
-			const newHighlights: Record<string, number> = {}
-
-			nextOrders.forEach(o => {
-				if (prevIds.size > 0 && !prevIds.has(o.id)) {
-					newHighlights[o.id] = now
-					// Yangi buyurtma kelganda ovozli xabar berish mumkin
-				}
-			})
-
-			prevOrderIdsRef.current = new Set(nextOrders.map(o => o.id))
-			setHighlightedOrderIds(prev => ({ ...prev, ...newHighlights }))
-			setOrders(nextOrders)
-		}
-		setLoading(false)
-	}
-
-	const handleStatusChange = async (id: string, status: string) => {
+	const updateStatus = async (id: string, newStatus: string) => {
 		const { error } = await supabase
 			.from('orders')
-			.update({ status })
+			.update({ status: newStatus })
 			.eq('id', id)
-
-		if (!error) {
-			toast.success('Status yangilandi', {
-				className: 'font-black uppercase text-[10px] tracking-widest',
-			})
-		}
-	}
-
-	if (loading) {
-		return (
-			<div className='flex h-[60vh] items-center justify-center'>
-				<Loader2
-					className='animate-spin text-red-600'
-					size={40}
-					strokeWidth={3}
-				/>
-			</div>
-		)
+		if (!error) toast.success('Status yangilandi')
 	}
 
 	return (
-		<div className='space-y-10 transition-colors pb-20'>
-			{/* Header */}
-			<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
-				<div className='flex flex-col gap-1'>
-					<h1 className='text-4xl font-black uppercase tracking-tighter text-slate-900 dark:text-white'>
-						Faol <span className='text-red-600'>Buyurtmalar</span>
+		<div className='min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-200 p-4 md:p-8 font-sans transition-colors duration-300'>
+			{/* Header Section */}
+			<div className='max-w-6xl mx-auto mb-10 flex flex-col md:flex-row justify-between items-end md:items-center gap-6'>
+				<div>
+					<h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3'>
+						<Package className='text-red-600' /> Faol Buyurtmalar
 					</h1>
-					<p className='text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]'>
-						Barcha buyurtmalarni boshqarish
+					<p className='text-slate-500 dark:text-slate-400 mt-1'>
+						Barcha buyurtmalarni real vaqtda boshqarish
 					</p>
 				</div>
 
-				<div className='bg-white dark:bg-slate-900 px-6 py-4 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.05)] flex items-center gap-4 transition-all'>
-					<div className='flex flex-col items-end'>
-						<span className='text-[10px] font-black text-slate-400 uppercase tracking-tighter'>
-							Jami
-						</span>
-						<span className='text-2xl font-black dark:text-white leading-none'>
-							{orders.length}
-						</span>
+				<div className='flex items-center gap-4 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm'>
+					<div className='flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700'>
+						<Calendar size={16} className='text-red-600' />
+						<input
+							type='date'
+							value={selectedDate}
+							onChange={e => {
+								setSelectedDate(e.target.value)
+								setPage(1)
+							}}
+							className='bg-transparent outline-none text-sm font-semibold uppercase text-slate-700 dark:text-slate-200'
+						/>
 					</div>
-					<div className='w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center'>
-						<Box size={20} className='text-slate-600 dark:text-slate-400' />
+					<div className='px-5 py-2 bg-red-600 rounded-xl text-white font-bold shadow-sm'>
+						Jami: {totalCount}
 					</div>
 				</div>
 			</div>
 
-			{/* Orders List */}
-			<div className='grid gap-4'>
-				<AnimatePresence mode='popLayout'>
-					{orders.map(order => {
-						const isNew = !!highlightedOrderIds[order.id]
-
-						return (
+			{/* Orders List Section */}
+			<div className='max-w-6xl mx-auto space-y-4 min-h-[500px]'>
+				{loading ? (
+					<div className='flex justify-center py-20'>
+						<Loader2 className='animate-spin text-red-600' size={40} />
+					</div>
+				) : (
+					<AnimatePresence mode='wait'>
+						{orders.map(order => (
 							<motion.div
 								key={order.id}
-								layout
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, scale: 0.95 }}
-								transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+								initial={{ opacity: 0, x: -10 }}
+								animate={{ opacity: 1, x: 0 }}
+								exit={{ opacity: 0, x: 10 }}
+								className='group relative bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-[24px] overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md'
 							>
-								<Card
-									className={cn(
-										'border-2 overflow-hidden bg-white dark:bg-slate-900 transition-all duration-500 rounded-[2rem]',
-										isNew
-											? 'border-red-500 shadow-[8px_8px_0px_0px_rgba(239,68,68,0.2)]'
-											: 'border-slate-100 dark:border-slate-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.03)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]',
-									)}
-								>
-									<CardContent className='p-0 flex flex-col md:flex-row items-stretch'>
-										{/* Status Indicator */}
-										<div
-											className={cn(
-												'w-full md:w-3 h-3 md:h-auto transition-colors',
-												STATUS_COLORS[order.status],
-											)}
-										/>
-
-										<div className='flex-1 flex flex-wrap items-center p-6 md:p-8 gap-6 md:gap-10'>
-											{/* Order Info */}
-											<div className='min-w-[120px]'>
-												<div className='flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase mb-1'>
-													<Clock size={12} strokeWidth={3} />
-													{new Date(order.created_at).toLocaleTimeString([], {
-														hour: '2-digit',
-														minute: '2-digit',
-													})}
-												</div>
-												<p className='font-black text-sm uppercase tracking-tighter dark:text-white'>
-													#{order.id.slice(-6)}
-												</p>
-											</div>
-
-											{/* Customer Info */}
-											<div className='min-w-[180px] md:border-l border-slate-100 dark:border-slate-800 md:pl-8'>
-												<p className='font-black uppercase text-sm dark:text-white mb-1 tracking-tight'>
-													{order.customer_name}
-												</p>
-												<div className='flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold'>
-													<Phone size={12} className='text-red-500' />{' '}
-													{order.phone}
-												</div>
-											</div>
-
-											{/* Delivery/Type */}
-											<div className='flex-1 md:border-l border-slate-100 dark:border-slate-800 md:pl-8'>
-												<div className='flex items-center gap-3'>
-													<div
-														className={cn(
-															'p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50',
-															order.type === 'dine-in'
-																? 'text-blue-600'
-																: 'text-orange-600',
-														)}
-													>
-														{order.type === 'dine-in' ? (
-															<Utensils size={18} />
-														) : (
-															<MapPin size={18} />
-														)}
-													</div>
-													<p className='font-bold text-sm dark:text-white line-clamp-1'>
-														{order.delivery_address || 'Olib ketish'}
-													</p>
-												</div>
-											</div>
-
-											{/* Amount */}
-											<div className='md:border-l border-slate-100 dark:border-slate-800 md:pl-8 text-right'>
-												<p className='text-2xl font-black dark:text-white tracking-tighter'>
-													{(order.total_amount || 0).toLocaleString()}
-													<span className='text-[10px] ml-1 text-slate-400 uppercase'>
-														so'm
-													</span>
-												</p>
-											</div>
-
-											{/* Status Action */}
-											<div className='w-full md:w-48 md:ml-auto'>
-												<Select
-													value={order.status}
-													onValueChange={v => handleStatusChange(order.id, v)}
-												>
-													<SelectTrigger className='h-12 rounded-xl border-2 border-slate-100 dark:border-slate-800 font-black uppercase text-[10px] tracking-widest bg-slate-50 dark:bg-slate-800/50 dark:text-white'>
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent className='bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl'>
-														{Object.entries(STATUS_LABELS).map(([k, v]) => (
-															<SelectItem
-																key={k}
-																value={k}
-																className='font-black uppercase text-[10px] tracking-widest p-3 focus:bg-red-50 dark:focus:bg-red-900/20'
-															>
-																{v}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</div>
+								<div className='p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-6'>
+									{/* Order Time and ID */}
+									<div className='flex flex-col gap-1 min-w-[100px]'>
+										<div className='flex items-center gap-1.5 text-slate-400 dark:text-slate-500'>
+											<Clock size={14} />
+											<span className='text-xs font-semibold uppercase'>
+												{new Date(order.created_at).toLocaleTimeString([], {
+													hour: '2-digit',
+													minute: '2-digit',
+												})}
+											</span>
 										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						)
-					})}
-				</AnimatePresence>
+										<span className='text-lg font-black tracking-widest text-slate-900 dark:text-white uppercase'>
+											#{order.id.slice(-5)}
+										</span>
+									</div>
 
-				{orders.length === 0 && (
-					<motion.div
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						className='text-center py-32 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800'
-					>
-						<Box
-							size={48}
-							className='mx-auto text-slate-300 mb-4'
-							strokeWidth={1}
-						/>
-						<p className='text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-sm'>
-							Hozircha buyurtmalar yo'q
-						</p>
-					</motion.div>
+									{/* Customer Details */}
+									<div className='flex-1 border-l border-slate-100 dark:border-slate-800 pl-6'>
+										<div className='flex items-center gap-2 text-slate-900 dark:text-white font-bold uppercase'>
+											<User size={14} className='text-red-600' />{' '}
+											{order.customer_name}
+										</div>
+										<div className='flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm'>
+											<Phone size={14} /> {order.phone}
+										</div>
+									</div>
+
+									{/* Address / Table Info */}
+									<div className='flex-1 border-l border-slate-100 dark:border-slate-800 pl-6'>
+										<div className='flex items-start gap-2 text-sm italic text-slate-600 dark:text-slate-300'>
+											<MapPin size={16} className='text-red-600 shrink-0' />
+											{order.delivery_address ||
+												(order.table_number
+													? `Stol: ${order.table_number}`
+													: 'Olib ketish')}
+										</div>
+									</div>
+
+									{/* Amount */}
+									<div className='min-w-[140px] text-right font-black text-slate-900 dark:text-white text-2xl'>
+										{order.total_amount?.toLocaleString()}{' '}
+										<span className='text-[10px] text-slate-400 dark:text-slate-500 uppercase'>
+											so'm
+										</span>
+									</div>
+
+									{/* Status Dropdown */}
+									<div className='w-full md:w-auto'>
+										<select
+											value={order.status}
+											onChange={e => updateStatus(order.id, e.target.value)}
+											className={cn(
+												'w-full md:w-40 px-4 py-2.5 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer appearance-none text-center outline-none shadow-sm',
+												STATUS_MAP[order.status as keyof typeof STATUS_MAP]?.bg,
+												STATUS_MAP[order.status as keyof typeof STATUS_MAP]
+													?.color,
+												STATUS_MAP[order.status as keyof typeof STATUS_MAP]
+													?.border,
+											)}
+										>
+											{Object.entries(STATUS_MAP).map(([key, value]) => (
+												<option
+													key={key}
+													value={key}
+													className='bg-white dark:bg-slate-900 text-slate-900 dark:text-white'
+												>
+													{value.label}
+												</option>
+											))}
+										</select>
+									</div>
+								</div>
+							</motion.div>
+						))}
+					</AnimatePresence>
 				)}
 			</div>
+
+			{/* PAGINATION CONTROLS */}
+			{totalPages > 1 && (
+				<div className='max-w-6xl mx-auto flex justify-center items-center gap-4 mt-12 pb-10'>
+					<Button
+						variant='outline'
+						disabled={page === 1 || loading}
+						onClick={() => setPage(p => p - 1)}
+						className='bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-red-600 rounded-xl px-6 shadow-sm transition-colors'
+					>
+						<ChevronLeft className='mr-2' size={18} /> Orqaga
+					</Button>
+
+					<div className='px-6 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-700 dark:text-white shadow-sm'>
+						{page}{' '}
+						<span className='text-slate-300 dark:text-slate-600 mx-1'>/</span>{' '}
+						{totalPages}
+					</div>
+
+					<Button
+						variant='outline'
+						disabled={page === totalPages || loading}
+						onClick={() => setPage(p => p + 1)}
+						className='bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-red-600 rounded-xl px-6 shadow-sm transition-colors'
+					>
+						Keyingi <ChevronRight className='ml-2' size={18} />
+					</Button>
+				</div>
+			)}
 		</div>
 	)
 }

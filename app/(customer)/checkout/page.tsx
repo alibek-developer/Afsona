@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useCartStore } from '@/lib/store'
 import { supabase } from '@/lib/supabaseClient'
 import { useMounted } from '@/lib/useMounted'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, MapPin, Utensils } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -25,30 +25,18 @@ export default function CheckoutPage() {
 	const [customerPhone, setCustomerPhone] = useState('')
 	const [tableNumber, setTableNumber] = useState('')
 	const [deliveryAddress, setDeliveryAddress] = useState('')
-	const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null)
-	const [deliveryTooFar, setDeliveryTooFar] = useState(false)
-	const [orderPlaced, setOrderPlaced] = useState(false)
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [orderPlaced, setOrderPlaced] = useState(false)
 	const [subtotal, setSubtotal] = useState(0)
 
 	useEffect(() => {
 		if (mounted) setSubtotal(getTotal())
 	}, [items, mounted, getTotal])
 
-	const handleLocationSelect = (
-		address: string,
-		distance: number,
-		tooFar: boolean,
-	) => {
-		setDeliveryAddress(address)
-		setDeliveryDistance(distance)
-		setDeliveryTooFar(tooFar)
-	}
-
 	const handlePlaceOrder = async () => {
 		if (isSubmitting) return
 		if (!customerName.trim() || customerPhone.trim().length < 9) {
-			toast.error("Ma'lumotlarni to'liq kiriting")
+			toast.error("Ma'lumotlarni to'liq kiritish shart!")
 			return
 		}
 		setIsSubmitting(true)
@@ -78,20 +66,21 @@ export default function CheckoutPage() {
 	}
 
 	if (!mounted) return null
+
 	if (orderPlaced)
 		return (
-			<div className='flex flex-col items-center justify-center min-h-[80vh] px-4 text-center bg-white dark:bg-slate-950'>
-				<div className='w-24 h-24 bg-green-500 dark:bg-green-600 text-white rounded-3xl flex items-center justify-center mb-8 border-[4px] border-black dark:border-green-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(34,197,94,0.4)]'>
-					<Check size={48} strokeWidth={4} />
+			<div className='flex flex-col items-center justify-center min-h-[90vh] px-6 text-center bg-white dark:bg-slate-950'>
+				<div className='w-20 h-20 bg-green-500 text-white rounded-2xl flex items-center justify-center mb-6 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'>
+					<Check size={40} strokeWidth={4} />
 				</div>
-				<h1 className='text-4xl md:text-5xl font-black mb-4 uppercase italic tracking-tighter dark:text-white'>
-					Rahmat!
+				<h1 className='text-3xl font-black mb-2 uppercase italic dark:text-white'>
+					RAHMAT!
 				</h1>
-				<p className='text-xl text-slate-600 dark:text-slate-400 mb-10 font-bold'>
-					Buyurtmangiz muvaffaqiyatli qabul qilindi.
+				<p className='text-slate-500 dark:text-slate-400 mb-8 font-bold text-sm'>
+					Buyurtmangiz qabul qilindi.
 				</p>
-				<Link href='/menu' className='w-full max-w-sm'>
-					<Button className='w-full py-8 bg-black dark:bg-red-600 text-white border-[3px] border-black dark:border-red-500 hover:bg-slate-800 dark:hover:bg-red-700 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[6px_6px_0px_0px_rgba(239,68,68,0.3)] text-xl font-black transition-all'>
+				<Link href='/menu' className='w-full max-w-xs'>
+					<Button className='w-full py-6 bg-red-600 text-white border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black'>
 						MENYUGA QAYTISH
 					</Button>
 				</Link>
@@ -99,171 +88,171 @@ export default function CheckoutPage() {
 		)
 
 	return (
-		<div className='bg-white dark:bg-slate-950 min-h-screen py-8 md:py-16 transition-colors duration-300'>
-			<div className='max-w-[1400px] mx-auto px-4 md:px-8'>
+		<div className='bg-slate-50 dark:bg-slate-950 min-h-screen pb-24 transition-colors duration-300'>
+			{/* Header */}
+			<div className='sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b-2 border-black dark:border-slate-800 px-4 py-4 flex items-center gap-4'>
 				<Link
 					href='/menu'
-					className='inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white mb-10 font-black text-lg transition-all group'
+					className='p-2 bg-slate-100 dark:bg-slate-800 border-2 border-black rounded-xl active:translate-y-1 transition-all'
 				>
 					<ArrowLeft
-						size={24}
-						className='mr-3 group-hover:-translate-x-2 transition-transform'
+						size={20}
 						strokeWidth={3}
+						className='text-black dark:text-white'
 					/>
-					ORQAGA QAYTISH
 				</Link>
+				<h1 className='text-xl font-black uppercase italic tracking-tighter dark:text-white'>
+					Buyurtma berish
+				</h1>
+			</div>
 
-				<div className='grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start'>
-					{/* Chap tomon: Ma'lumotlar */}
-					<div className='lg:col-span-7 space-y-10'>
-						{/* 01. Shaxsiy ma'lumotlar */}
-						<div className='bg-white dark:bg-slate-900 border-[4px] border-black dark:border-slate-700 rounded-2xl p-8 md:p-12 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] dark:shadow-[10px_10px_0px_0px_rgba(255,255,255,0.1),0_0_30px_rgba(239,68,68,0.15)]'>
-							<h2 className='text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-10 border-b-2 border-slate-100 dark:border-slate-800 pb-4'>
-								01. Shaxsiy ma'lumotlar
-							</h2>
-							<div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-								<div className='space-y-4'>
-									<Label className='text-lg font-black text-black dark:text-white uppercase ml-1 italic'>
-										Ismingiz
-									</Label>
-									<Input
-										value={customerName}
-										onChange={e => setCustomerName(e.target.value)}
-										placeholder='Ali Valiyev'
-										className='h-16 text-lg border-[3px] border-black dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl focus-visible:ring-0 focus-visible:border-red-500 dark:focus-visible:border-red-500 font-bold px-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]'
-									/>
-								</div>
-								<div className='space-y-4'>
-									<Label className='text-lg font-black text-black dark:text-white uppercase ml-1 italic'>
-										Telefon raqam
-									</Label>
-									<Input
-										value={customerPhone}
-										onChange={e => setCustomerPhone(e.target.value)}
-										placeholder='+998'
-										className='h-16 text-lg border-[3px] border-black dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl focus-visible:ring-0 focus-visible:border-red-500 dark:focus-visible:border-red-500 font-bold px-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]'
-									/>
-								</div>
-							</div>
-						</div>
-
-						{/* 02. Qabul qilish turi */}
-						<div className='bg-white dark:bg-slate-900 border-[4px] border-black dark:border-slate-700 rounded-2xl p-8 md:p-12 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] dark:shadow-[10px_10px_0px_0px_rgba(255,255,255,0.1),0_0_30px_rgba(239,68,68,0.15)]'>
-							<h2 className='text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-10 border-b-2 border-slate-100 dark:border-slate-800 pb-4'>
-								02. Qabul qilish turi
-							</h2>
-							<RadioGroup
-								value={orderMode}
-								onValueChange={v => setOrderMode(v as OrderMode)}
-								className='grid grid-cols-2 gap-6 mb-10'
-							>
-								<Label
-									htmlFor='delivery'
-									className={`flex items-center justify-center h-20 border-[3px] rounded-2xl cursor-pointer font-black text-lg uppercase transition-all ${
-										orderMode === 'delivery'
-											? 'bg-red-500 dark:bg-red-600 text-white border-black dark:border-red-500 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(239,68,68,0.4)] -translate-y-2'
-											: 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-black dark:hover:border-red-500'
-									}`}
-								>
-									<RadioGroupItem
-										value='delivery'
-										id='delivery'
-										className='sr-only'
-									/>
-									Yetkazib berish
-								</Label>
-								<Label
-									htmlFor='dine-in'
-									className={`flex items-center justify-center h-20 border-[3px] rounded-2xl cursor-pointer font-black text-lg uppercase transition-all ${
-										orderMode === 'dine-in'
-											? 'bg-red-500 dark:bg-red-600 text-white border-black dark:border-red-500 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(239,68,68,0.4)] -translate-y-2'
-											: 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-black dark:hover:border-red-500'
-									}`}
-								>
-									<RadioGroupItem
-										value='dine-in'
-										id='dine-in'
-										className='sr-only'
-									/>
-									Restoranda
-								</Label>
-							</RadioGroup>
-
-							{orderMode === 'delivery' ? (
-								<div className='border-[3px] border-black dark:border-slate-700 rounded-2xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]'>
-									<LocationPicker onLocationSelect={handleLocationSelect} />
-								</div>
-							) : (
-								<div className='space-y-4 animate-in fade-in zoom-in-95 duration-300'>
-									<Label className='text-lg font-black text-black dark:text-white uppercase ml-1 italic'>
-										Stol raqami
-									</Label>
-									<Input
-										placeholder='Masalan: 5'
-										value={tableNumber}
-										onChange={e => setTableNumber(e.target.value)}
-										className='h-16 text-lg border-[3px] border-black dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl font-bold px-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]'
-									/>
-								</div>
-							)}
-						</div>
+			<div className='max-w-md mx-auto px-4 mt-6 space-y-6'>
+				{/* 01. Shaxsiy ma'lumotlar - Ixchamroq */}
+				<section className='bg-white dark:bg-slate-900 border-[3px] border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'>
+					<div className='flex items-center gap-2 mb-6'>
+						<span className='bg-red-500 text-white text-xs font-black px-2 py-1 rounded-md border-2 border-black'>
+							01
+						</span>
+						<h2 className='font-black uppercase tracking-tight text-sm text-slate-500'>
+							Shaxsiy ma'lumotlar
+						</h2>
 					</div>
 
-					{/* O'ng tomon: Xulosa */}
-					<div className='lg:col-span-5'>
-						<div className='bg-white dark:bg-slate-900 border-[4px] border-black dark:border-slate-700 rounded-2xl p-8 md:p-10 shadow-[10px_10px_0px_0px_rgba(239,68,68,1)] dark:shadow-[10px_10px_0px_0px_rgba(239,68,68,0.4)] sticky top-12'>
-							<h2 className='text-3xl font-black italic uppercase mb-8 border-b-[6px] border-black dark:border-red-600 pb-4 tracking-tighter dark:text-white'>
-								Xulosa
-							</h2>
+					<div className='space-y-4'>
+						<div className='space-y-1.5'>
+							<Label className='text-xs font-black uppercase ml-1 dark:text-slate-300'>
+								Ism va Familiya
+							</Label>
+							<Input
+								value={customerName}
+								onChange={e => setCustomerName(e.target.value)}
+								placeholder='Ali Valiyev'
+								className='h-12 border-2 border-black dark:border-slate-700 font-bold focus-visible:ring-0 rounded-xl'
+							/>
+						</div>
+						<div className='space-y-1.5'>
+							<Label className='text-xs font-black uppercase ml-1 dark:text-slate-300'>
+								Telefon raqam
+							</Label>
+							<Input
+								value={customerPhone}
+								onChange={e => setCustomerPhone(e.target.value)}
+								placeholder='+998'
+								className='h-12 border-2 border-black dark:border-slate-700 font-bold focus-visible:ring-0 rounded-xl'
+							/>
+						</div>
+					</div>
+				</section>
 
-							<div className='space-y-6 max-h-[400px] overflow-y-auto pr-4 mb-10 custom-scrollbar'>
-								{items.map(item => (
-									<div
-										key={item.id}
-										className='flex justify-between items-start gap-4 pb-4 border-b-2 border-dashed border-slate-200 dark:border-slate-700'
-									>
-										<div className='flex-1'>
-											<p className='font-black text-xl uppercase leading-tight mb-1 dark:text-white'>
-												{item.name}
-											</p>
-											<p className='text-base font-bold text-slate-500 dark:text-slate-400'>
-												{item.quantity} dona × <Price value={item.price} />
-											</p>
-										</div>
-										<div className='text-right'>
-											<Price
-												value={item.price * item.quantity}
-												className='text-xl font-black text-red-500 dark:text-red-500 whitespace-nowrap'
-											/>
-										</div>
-									</div>
-								))}
-							</div>
+				{/* 02. Qabul qilish turi - Ixchamroq */}
+				<section className='bg-white dark:bg-slate-900 border-[3px] border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'>
+					<div className='flex items-center gap-2 mb-6'>
+						<span className='bg-red-500 text-white text-xs font-black px-2 py-1 rounded-md border-2 border-black'>
+							02
+						</span>
+						<h2 className='font-black uppercase tracking-tight text-sm text-slate-500'>
+							Qabul qilish
+						</h2>
+					</div>
 
-							<div className='bg-slate-50 dark:bg-slate-800 border-[3px] border-black dark:border-slate-700 p-6 rounded-xl mb-10 flex justify-between items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]'>
-								<span className='font-black uppercase text-2xl italic tracking-tighter dark:text-white'>
-									Jami:
+					<RadioGroup
+						value={orderMode}
+						onValueChange={v => setOrderMode(v as OrderMode)}
+						className='grid grid-cols-2 gap-3 mb-6'
+					>
+						<Label
+							htmlFor='delivery'
+							className={`flex flex-col items-center justify-center py-3 border-[3px] rounded-xl cursor-pointer transition-all ${orderMode === 'delivery' ? 'bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-transparent'}`}
+						>
+							<RadioGroupItem
+								value='delivery'
+								id='delivery'
+								className='sr-only'
+							/>
+							<MapPin size={20} className='mb-1' />
+							<span className='text-[10px] font-black uppercase'>
+								Yetkazish
+							</span>
+						</Label>
+						<Label
+							htmlFor='dine-in'
+							className={`flex flex-col items-center justify-center py-3 border-[3px] rounded-xl cursor-pointer transition-all ${orderMode === 'dine-in' ? 'bg-red-500 text-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-transparent'}`}
+						>
+							<RadioGroupItem
+								value='dine-in'
+								id='dine-in'
+								className='sr-only'
+							/>
+							<Utensils size={20} className='mb-1' />
+							<span className='text-[10px] font-black uppercase'>Restoran</span>
+						</Label>
+					</RadioGroup>
+
+					{orderMode === 'delivery' ? (
+						<div className='rounded-xl overflow-hidden border-2 border-black'>
+							<LocationPicker
+								onLocationSelect={addr => setDeliveryAddress(addr)}
+							/>
+						</div>
+					) : (
+						<div className='space-y-1.5 animate-in slide-in-from-top-2 duration-300'>
+							<Label className='text-xs font-black uppercase ml-1 dark:text-slate-300'>
+								Stol raqami
+							</Label>
+							<Input
+								value={tableNumber}
+								onChange={e => setTableNumber(e.target.value)}
+								placeholder='Stol: 12'
+								className='h-12 border-2 border-black font-bold rounded-xl'
+							/>
+						</div>
+					)}
+				</section>
+
+				{/* 03. Xulosa - Eng muhim qismi */}
+				<section className='bg-white dark:bg-slate-900 border-[3px] border-black rounded-2xl p-5 shadow-[6px_6px_0px_0px_rgba(239,68,68,1)]'>
+					<h2 className='font-black italic uppercase text-lg mb-4 border-b-4 border-black pb-2 dark:text-white'>
+						Xulosa
+					</h2>
+
+					<div className='space-y-3 mb-6'>
+						{items.map(item => (
+							<div
+								key={item.id}
+								className='flex justify-between items-center text-sm border-b border-dashed border-slate-200 dark:border-slate-800 pb-2'
+							>
+								<span className='font-bold uppercase text-xs truncate max-w-[150px] dark:text-white'>
+									{item.name}
 								</span>
-								<Price
-									value={subtotal}
-									className='text-3xl font-black text-red-500 dark:text-red-500'
-								/>
+								<span className='font-black text-red-500'>
+									<Price value={item.price * item.quantity} />
+								</span>
 							</div>
-
-							<Button
-								onClick={handlePlaceOrder}
-								disabled={isSubmitting || items.length === 0}
-								className='w-full py-10 bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 text-white border-[4px] border-black dark:border-red-500 rounded-2xl font-black uppercase text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(239,68,68,0.4)] active:shadow-none active:translate-x-2 active:translate-y-2 transition-all disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:border-slate-300 dark:disabled:border-slate-600'
-							>
-								{isSubmitting ? (
-									<Loader2 className='animate-spin w-8 h-8' />
-								) : (
-									'BUYURTMA BERISH'
-								)}
-							</Button>
-						</div>
+						))}
 					</div>
-				</div>
+
+					<div className='flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-2 border-black mb-6'>
+						<span className='font-black uppercase text-sm italic dark:text-white'>
+							Jami:
+						</span>
+						<Price
+							value={subtotal}
+							className='text-xl font-black text-red-500'
+						/>
+					</div>
+
+					<Button
+						onClick={handlePlaceOrder}
+						disabled={isSubmitting || items.length === 0}
+						className='w-full py-7 bg-red-600 hover:bg-red-700 text-white border-[3px] border-black rounded-xl font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all'
+					>
+						{isSubmitting ? (
+							<Loader2 className='animate-spin' />
+						) : (
+							'BUYURTMA BERISH'
+						)}
+					</Button>
+				</section>
 			</div>
 		</div>
 	)

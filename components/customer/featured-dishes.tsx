@@ -1,68 +1,109 @@
 'use client'
 
-import { useMenuStore } from '@/lib/store'
-import { motion } from 'framer-motion' // Animatsiya qo'shildi
-import { MenuCard } from './menu-card'
+import { MenuCard } from '@/components/customer/menu-card'
+import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabaseClient'
+import type { MenuItem } from '@/lib/types'
+import { motion } from 'framer-motion'
+import { ArrowRight, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export function FeaturedDishes() {
-	const items = useMenuStore(state => state.items)
-	const featuredItems = items
-		.filter(item => item.available_on_website)
-		.slice(0, 8)
+  const [items, setItems] = useState<MenuItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-	return (
-		<section className='py-16 md:py-24 bg-white dark:bg-slate-950 relative overflow-hidden transition-colors duration-500'>
-			{/* Background Decor */}
-			<div className='absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-slate-50 dark:from-slate-900 to-transparent' />
+  useEffect(() => {
+    fetchFeaturedItems()
+  }, [])
 
-			<div className='absolute top-1/4 right-0 w-64 h-64 bg-red-600/5 rounded-full blur-[100px]' />
-			<div className='absolute bottom-1/4 left-0 w-64 h-64 bg-red-600/5 rounded-full blur-[100px]' />
+  const fetchFeaturedItems = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('available_on_website', true)
+        .order('created_at', { ascending: false })
+        .limit(4) // Faqat 4 ta taomni olish
 
-			<div className='relative z-10 container mx-auto px-4 md:px-6'>
-				{/* Sarlavha Dizayni */}
-				<div className='flex flex-col items-center text-center mb-12 md:mb-20'>
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						className='inline-block mb-4'
-					>
-						<span className='bg-red-600 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]'>
-							Tavsiya qilamiz
-						</span>
-					</motion.div>
+      if (error) {
+        console.error('Xatolik:', error.message)
+      } else {
+        setItems(data || [])
+      }
+    } catch (error) {
+      console.error('Fetch error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-					<h2 className='text-4xl md:text-6xl font-black text-black dark:text-white uppercase tracking-tighter leading-none mb-6'>
-						Mashhur <span className='text-red-600'>Taomlar</span>
-					</h2>
+  return (
+    <section className='py-16 md:py-24 bg-white dark:bg-slate-950 relative overflow-hidden transition-colors duration-500'>
+      {/* Background Decor */}
+      <div className='absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-slate-50 dark:from-slate-900/20 to-transparent' />
+      
+      <div className='relative z-10 max-w-[1300px] mx-auto px-4 md:px-8'>
+        {/* Sarlavha */}
+        <div className='flex flex-col items-center text-center mb-16'>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className='mb-4'
+          >
+             <span className='bg-red-600 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]'>
+               Tavsiya qilamiz
+             </span>
+          </motion.div>
 
-					<div className='h-1.5 w-24 bg-black dark:bg-red-600 rounded-full' />
-				</div>
+          <h2 className='text-5xl md:text-7xl font-black text-black dark:text-white uppercase tracking-tighter leading-none mb-6'>
+            Mashhur <span className='text-red-600'>Taomlar</span>
+          </h2>
+        </div>
 
-				{/* Grid: Mobil qurilmalarda 2 ta, planshetda 2 ta, kompyuterda 4 ta */}
-				<div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-8 max-w-7xl mx-auto'>
-					{featuredItems.length > 0 ? (
-						featuredItems.map((item, index) => (
-							<motion.div
-								key={item.id}
-								initial={{ opacity: 0, y: 20 }}
-								whileInView={{ opacity: 1, y: 0 }}
-								viewport={{ once: true }}
-								transition={{ delay: index * 0.1 }}
-							>
-								<MenuCard item={item} />
-							</motion.div>
-						))
-					) : (
-						<div className='col-span-full py-20 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem]'>
-							<div className='animate-bounce mb-4 text-4xl'>🥘</div>
-							<p className='text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-sm'>
-								Mazali taomlar tayyorlanmoqda...
-							</p>
-						</div>
-					)}
-				</div>
-			</div>
-		</section>
-	)
+        {loading ? (
+          <div className='flex flex-col items-center justify-center py-10'>
+            <Loader2 className='w-10 h-10 text-red-500 animate-spin mb-4' />
+          </div>
+        ) : (
+          <div className='space-y-16'>
+            {/* Grid - Faqat 4 ta card */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full'>
+              {items.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <MenuCard item={item} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Pastdagi Tugma */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className='flex justify-center'
+            >
+              <Link href='/menu'>
+                <Button 
+                  variant="outline" 
+                  className="group h-14 px-8 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-transparent hover:bg-red-600 hover:border-red-600 hover:text-white transition-all duration-300 font-black uppercase tracking-widest text-sm flex items-center gap-3"
+                >
+                  Menuni to'liq ko'rish
+                  <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
 }

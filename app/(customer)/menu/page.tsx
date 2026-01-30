@@ -74,7 +74,7 @@ function MenuContent() {
 	}
 
 	return (
-		<div className='max-w-[1400px] mx-auto px-4 md:px-8 space-y-12'>
+		<div className='max-w-[1300px] mx-auto px-4 md:px-8 space-y-12'>
 			{/* Sarlavha qismi */}
 			<div className='text-center'>
 				<h1 className='text-5xl md:text-7xl font-black mb-6 text-black dark:text-white uppercase tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:drop-shadow-none'>

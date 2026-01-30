@@ -1,228 +1,184 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
 import Autoplay from 'embla-carousel-autoplay'
 import useEmblaCarousel from 'embla-carousel-react'
 import {
+	ArrowRight,
 	Award,
 	Clock,
 	Heart,
 	MapPin,
 	Phone,
+	Sparkles,
 	Users,
-	Utensils,
+	Utensils
 } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
 export default function AboutPage() {
-	const [emblaRef, emblaApi] = useEmblaCarousel(
-		{ loop: true, align: 'center' },
-		[Autoplay({ delay: 3500, stopOnInteraction: false }) as any],
-	)
-	const [selectedIndex, setSelectedIndex] = useState(0)
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, align: 'center' },
+    [Autoplay({ delay: 3500, stopOnInteraction: false }) as any],
+  )
+  const [selectedIndex, setSelectedIndex] = useState(0)
 
-	useEffect(() => {
-		if (!emblaApi) return
-		emblaApi.on('select', () => {
-			setSelectedIndex(emblaApi.selectedScrollSnap())
-		})
-	}, [emblaApi])
+  useEffect(() => {
+    if (!emblaApi) return
+    emblaApi.on('select', () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap())
+    })
+  }, [emblaApi])
 
-	const carouselImages = [
-		'/uzbek-restaurant-interior-traditional-decor.jpg',
-		'/uzbek-restaurant-interior-traditional-decor.jpg',
-		'/uzbek-restaurant-interior-traditional-decor.jpg',
-	]
+  const carouselImages = [
+    '/uzbek-restaurant-interior-traditional-decor.jpg',
+    '/uzbek-restaurant-interior-traditional-decor.jpg',
+    '/uzbek-restaurant-interior-traditional-decor.jpg',
+  ]
 
-	const MinimalIcon = ({ icon: Icon }: { icon: any }) => (
-		<div className='p-3 bg-red-50 dark:bg-red-950 rounded-2xl transition-all duration-300 group-hover:bg-red-600 dark:group-hover:bg-red-600 group-hover:scale-110'>
-			<Icon className='h-6 w-6 text-red-600 dark:text-red-500 group-hover:text-white transition-colors duration-300' />
-		</div>
-	)
+  return (
+    <div className='min-h-screen bg-[#020617] text-slate-200 py-12 md:py-24 font-sans overflow-x-hidden'>
+      <div className='max-w-7xl mx-auto px-4'>
+        
+        {/* 🔥 Header: Bold & Minimal */}
+        <div className='relative mb-24 text-center'>
+          <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-600/10 blur-[120px] rounded-full'></div>
+          <h1 className='relative text-6xl md:text-8xl font-black mb-4 text-white uppercase tracking-tighter italic'>
+            Biz <span className='text-red-600'>Haqimizda</span>
+          </h1>
+          <div className='flex items-center justify-center gap-4'>
+            <span className='h-[2px] w-12 bg-red-600'></span>
+            <p className='text-slate-500 font-black tracking-[0.4em] uppercase text-xs'>
+              Est. 2010 • Premium Quality
+            </p>
+            <span className='h-[2px] w-12 bg-red-600'></span>
+          </div>
+        </div>
 
-	return (
-		<div className='min-h-screen bg-white dark:bg-slate-950 py-12 md:py-20 font-sans transition-colors duration-300'>
-			<div className='max-w-6xl mx-auto px-4'>
-				{/* Sarlavha qismi */}
-				<div className='text-center mb-16'>
-					<h1 className='text-5xl md:text-7xl font-black mb-4 text-slate-900 dark:text-white uppercase tracking-tight'>
-						Biz Haqimizda
-					</h1>
-					<div className='flex items-center justify-center gap-3'>
-						<div className='h-[1px] w-10 bg-red-600 dark:bg-red-500'></div>
-						<p className='text-red-600 dark:text-red-400 font-bold tracking-[0.2em] uppercase text-xs'>
-							An'ana va Sifat
-						</p>
-						<div className='h-[1px] w-10 bg-red-600 dark:bg-red-500'></div>
-					</div>
-				</div>
+        {/* 🖼️ 3D Slider Section */}
+        <div className='relative mb-32'>
+          <div className='overflow-visible' ref={emblaRef}>
+            <div className='flex touch-pan-y'>
+              {carouselImages.map((src, index) => (
+                <div
+                  className='flex-[0_0_85%] md:flex-[0_0_60%] min-w-0 pl-8'
+                  key={index}
+                >
+                  <div
+                    className={`relative aspect-[16/10] rounded-[3rem] overflow-hidden transition-all duration-1000 border-2 ${
+                      index === selectedIndex
+                        ? 'border-red-600 scale-100 shadow-[0_0_60px_rgba(220,38,38,0.2)] opacity-100'
+                        : 'border-slate-800 scale-90 opacity-20 blur-[2px]'
+                    }`}
+                  >
+                    <Image src={src} alt='Interior' fill className='object-cover grayscale-[0.2] hover:grayscale-0 transition-all duration-500' />
+                    <div className='absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent' />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-				{/* 3D Carousel */}
-				<div className='relative mb-24'>
-					<div className='overflow-hidden' ref={emblaRef}>
-						<div className='flex touch-pan-y'>
-							{carouselImages.map((src, index) => (
-								<div
-									className='flex-[0_0_90%] md:flex-[0_0_70%] min-w-0 pl-6'
-									key={index}
-								>
-									<div
-										className={`relative aspect-[16/9] rounded-[2.5rem] overflow-hidden transition-all duration-700 ${
-											index === selectedIndex
-												? 'scale-100 shadow-2xl dark:shadow-[0_0_40px_rgba(239,68,68,0.3)] shadow-red-100 opacity-100'
-												: 'scale-90 opacity-30 blur-[1px]'
-										}`}
-									>
-										<Image
-											src={src}
-											alt='Interior'
-											fill
-											className='object-cover'
-										/>
-										<div className='absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent' />
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				</div>
+        {/* 📖 Story Section: Grid Layout */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-40'>
+          <div className='relative group order-2 lg:order-1'>
+            <div className='absolute -inset-4 bg-red-600/20 rounded-[4rem] blur-2xl group-hover:bg-red-600/30 transition-all'></div>
+            <div className='relative rounded-[3rem] overflow-hidden border-2 border-slate-800 bg-[#0f172a] p-3'>
+                <div className='relative aspect-square rounded-[2.5rem] overflow-hidden'>
+                    <Image src='/uzbek-restaurant-interior-traditional-decor.jpg' fill className='object-cover' alt='About' />
+                </div>
+            </div>
+            {/* Floating Badge */}
+            <div className='absolute -bottom-10 -right-10 bg-red-600 p-8 rounded-full border-8 border-[#020617] shadow-2xl animate-bounce-slow'>
+                <Utensils size={40} className='text-white' />
+            </div>
+          </div>
 
-				{/* Hikoyamiz qismi */}
-				<div className='grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32'>
-					<div className='relative group'>
-						<div className='absolute -inset-4 bg-red-50 dark:bg-red-950 rounded-[3rem] scale-95 group-hover:scale-100 transition-transform duration-500'></div>
-						<div className='relative aspect-square rounded-[2.5rem] overflow-hidden border-8 border-white dark:border-slate-800 shadow-xl dark:shadow-[0_0_30px_rgba(239,68,68,0.2)]'>
-							<Image
-								src='/uzbek-restaurant-interior-traditional-decor.jpg'
-								fill
-								className='object-cover'
-								alt='About'
-							/>
-						</div>
-					</div>
+          <div className='space-y-10 order-1 lg:order-2'>
+            <div className='space-y-6'>
+              <div className='inline-flex items-center gap-2 px-4 py-2 bg-red-600/10 border border-red-600/20 rounded-full text-red-500 text-xs font-black uppercase tracking-widest'>
+                <Sparkles size={14} /> Bizning Tarix
+              </div>
+              <h2 className='text-5xl md:text-7xl font-black text-white uppercase leading-[0.9] tracking-tighter italic'>
+                Lazzatli <br /> 
+                <span className='text-red-600'>An'analar</span> <br />
+                Maskani
+              </h2>
+              <p className='text-slate-400 text-xl leading-relaxed font-medium max-w-xl'>
+                O'zbek Oshxonasi 2010-yildan buyon haqiqiy mehmondorchilikni ulashib kelmoqda. Har bir taomimizda ota-bobolarimiz siri va cheksiz mehr bor.
+              </p>
+            </div>
 
-					<div className='space-y-8'>
-						<div className='space-y-4'>
-							<h2 className='text-4xl md:text-5xl font-black text-slate-900 dark:text-white uppercase leading-none'>
-								Lazzatli an'analar <br />
-								<span className='text-red-600 dark:text-red-500'>
-									maskaniga
-								</span>{' '}
-								xush kelibsiz
-							</h2>
-							<p className='text-slate-600 dark:text-slate-400 text-lg leading-relaxed'>
-								O'zbek Oshxonasi 2010-yildan buyon o'z mehmonlariga haqiqiy
-								o'zbekona mehmondorchilikni ulashib kelmoqda. Bizning har bir
-								taomimizda ota-bobolarimizdan qolgan sirlar va cheksiz mehr bor.
-							</p>
-						</div>
+            <div className='flex gap-12'>
+              <div>
+                <h4 className='font-black text-5xl text-white italic'>15<span className='text-red-600'>+</span></h4>
+                <p className='text-xs text-slate-500 uppercase font-black tracking-widest mt-2'>Yillik Tajriba</p>
+              </div>
+              <div className='w-[1px] h-16 bg-slate-800'></div>
+              <div>
+                <h4 className='font-black text-5xl text-white italic'>50<span className='text-red-600'>+</span></h4>
+                <p className='text-xs text-slate-500 uppercase font-black tracking-widest mt-2'>Usta Oshpazlar</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-						<div className='grid grid-cols-2 gap-8 py-6 border-y border-slate-100 dark:border-slate-800'>
-							<div>
-								<h4 className='font-black text-3xl text-slate-900 dark:text-white'>
-									100%
-								</h4>
-								<p className='text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-widest'>
-									Tabiiy mahsulotlar
-								</p>
-							</div>
-							<div>
-								<h4 className='font-black text-3xl text-slate-900 dark:text-white'>
-									Top
-								</h4>
-								<p className='text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-widest'>
-									Usta oshpazlar
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
+        {/* 🏢 Info Cards: Brutalist Style */}
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-40'>
+          {[
+            { icon: Clock, title: 'Ish vaqti', desc: '10:00 - 23:00', label: 'Har kuni' },
+            { icon: MapPin, title: 'Manzil', desc: 'Toshkent sh.', label: 'Amir Temur 1' },
+            { icon: Phone, title: 'Aloqa', desc: '+998 71 123', label: 'Ishonch telefoni' },
+            { icon: Users, title: "Sig'im", desc: "100+ o'rin", label: 'Oilaviy xonalar' },
+          ].map((item, idx) => (
+            <div key={idx} className='group relative p-[1px] rounded-[2.5rem] bg-slate-800 hover:bg-red-600 transition-all duration-500 overflow-hidden'>
+                <div className='bg-[#0f172a] p-10 rounded-[2.45rem] h-full flex flex-col items-center text-center'>
+                    <div className='mb-6 p-4 bg-slate-900 rounded-2xl border border-slate-800 group-hover:bg-red-600 group-hover:border-red-500 transition-all duration-500'>
+                        <item.icon size={28} className='text-red-600 group-hover:text-white transition-colors' />
+                    </div>
+                    <h3 className='font-black text-xl text-white uppercase tracking-tighter mb-2'>{item.title}</h3>
+                    <p className='text-red-500 font-black text-lg'>{item.desc}</p>
+                    <p className='text-slate-600 text-[10px] uppercase mt-4 font-black tracking-[0.2em]'>{item.label}</p>
+                </div>
+            </div>
+          ))}
+        </div>
 
-				{/* Ma'lumot cardlari */}
-				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-32'>
-					{[
-						{
-							icon: Clock,
-							title: 'Ish vaqti',
-							desc: '10:00 - 23:00',
-							label: 'Har kuni',
-						},
-						{
-							icon: MapPin,
-							title: 'Manzil',
-							desc: 'Toshkent sh.',
-							label: 'Amir Temur 1',
-						},
-						{
-							icon: Phone,
-							title: 'Aloqa',
-							desc: '+998 71 123',
-							label: 'Ishonch telefoni',
-						},
-						{
-							icon: Users,
-							title: "Sig'im",
-							desc: "100+ o'rin",
-							label: 'Oilaviy xonalar',
-						},
-					].map((item, idx) => (
-						<Card
-							key={idx}
-							className='group border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-red-50 dark:hover:shadow-[0_0_30px_rgba(239,68,68,0.2)] transition-all duration-500 rounded-[2rem] bg-slate-50 dark:bg-slate-900 p-2'
-						>
-							<CardContent className='p-8 flex flex-col items-center text-center'>
-								<MinimalIcon icon={item.icon} />
-								<h3 className='font-black text-lg mt-6 text-slate-900 dark:text-white uppercase tracking-tight'>
-									{item.title}
-								</h3>
-								<p className='text-red-600 dark:text-red-500 font-bold text-sm mt-1'>
-									{item.desc}
-								</p>
-								<p className='text-slate-400 dark:text-slate-600 text-[10px] uppercase mt-2 font-semibold tracking-widest'>
-									{item.label}
-								</p>
-							</CardContent>
-						</Card>
-					))}
-				</div>
+        {/* 🚀 CTA: Why Us? Neon Box */}
+        <div className='relative group overflow-hidden bg-red-600 rounded-[4rem] p-12 md:p-24 text-center shadow-[0_0_80px_rgba(220,38,38,0.25)]'>
+          <div className='absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-white/10 blur-[100px] rounded-full'></div>
+          
+          <h2 className='relative text-5xl md:text-7xl font-black uppercase text-white mb-16 italic tracking-tighter'>
+            Nima uchun <br className='md:hidden'/> bizni tanlashadi?
+          </h2>
+          
+          <div className='relative grid grid-cols-1 md:grid-cols-3 gap-16'>
+            {[
+              { icon: Award, title: 'Yuqori Sifat', desc: 'Eng saralangan va halol mahsulotlar kafolati.' },
+              { icon: Heart, title: 'Samimiy Xizmat', desc: 'Har bir mehmon biz uchun qadrli va mo\'tabar.' },
+              { icon: Utensils, title: 'Betakror Ta\'m', desc: 'An\'anaviy usulda pishirilgan milliy lazzat.' },
+            ].map((feature, fidx) => (
+              <div key={fidx} className='space-y-6 group/item'>
+                <div className='w-20 h-20 bg-white text-red-600 rounded-3xl flex items-center justify-center mx-auto rotate-3 group-hover/item:rotate-12 transition-transform duration-500 shadow-xl'>
+                  <feature.icon size={36} strokeWidth={3} />
+                </div>
+                <h4 className='font-black text-2xl uppercase text-white italic'>{feature.title}</h4>
+                <p className='text-red-100/80 text-sm font-medium leading-relaxed'>{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+          
+          <button className='mt-20 group inline-flex items-center gap-3 bg-white text-[#020617] px-10 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95'>
+            Menyuni ko'rish <ArrowRight size={20} />
+          </button>
+        </div>
 
-				{/* Nima uchun biz? */}
-				<div className='bg-red-600 dark:bg-red-600 rounded-[3rem] p-12 md:p-20 text-center text-white shadow-2xl shadow-red-200 dark:shadow-[0_0_50px_rgba(239,68,68,0.5)]'>
-					<h2 className='text-4xl md:text-5xl font-black uppercase mb-12'>
-						Nima uchun bizni tanlashadi?
-					</h2>
-					<div className='grid grid-cols-1 md:grid-cols-3 gap-12'>
-						<div className='space-y-4'>
-							<div className='w-16 h-16 bg-white/10 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm hover:bg-white/20 dark:hover:bg-white/30 transition-colors'>
-								<Award className='h-8 w-8 text-white' />
-							</div>
-							<h4 className='font-bold text-xl uppercase'>Yuqori Sifat</h4>
-							<p className='text-red-100 dark:text-red-200 text-sm leading-relaxed'>
-								Eng saralangan va halol mahsulotlar kafolati.
-							</p>
-						</div>
-						<div className='space-y-4'>
-							<div className='w-16 h-16 bg-white/10 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm hover:bg-white/20 dark:hover:bg-white/30 transition-colors'>
-								<Heart className='h-8 w-8 text-white' />
-							</div>
-							<h4 className='font-bold text-xl uppercase'>Samimiy Xizmat</h4>
-							<p className='text-red-100 dark:text-red-200 text-sm leading-relaxed'>
-								Har bir mehmon biz uchun qadrli va mo'tabar.
-							</p>
-						</div>
-						<div className='space-y-4'>
-							<div className='w-16 h-16 bg-white/10 dark:bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm hover:bg-white/20 dark:hover:bg-white/30 transition-colors'>
-								<Utensils className='h-8 w-8 text-white' />
-							</div>
-							<h4 className='font-bold text-xl uppercase'>Betakror Ta'm</h4>
-							<p className='text-red-100 dark:text-red-200 text-sm leading-relaxed'>
-								An'anaviy usulda pishirilgan milliy lazzat.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	)
+      </div>
+      
+      {/* Background Decorations */}
+      <div className='fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-red-600/5 blur-[150px] rounded-full'></div>
+      <div className='fixed bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-red-600/5 blur-[150px] rounded-full'></div>
+    </div>
+  )
 }

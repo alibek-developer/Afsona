@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabaseClient'
 import { Loader2, LockKeyhole, Mail, Moon, Sun, Utensils } from 'lucide-react'
-import { useTheme } from 'next-themes' // Qo'shildi
+import { useTheme } from 'next-themes'; // Qo'shildi
 import { useEffect, useState } from 'react'
 
 export default function LoginPage() {

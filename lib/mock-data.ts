@@ -6,7 +6,7 @@ export const mockMenuItems: MenuItem[] = [
     name: "Achchiq salat",
     description: "Yangi pomidor, bodring, piyoz va ko'katlar bilan",
     price: 25000,
-    category: "XAMIRLI TAOMLAR", // Types dagi CATEGORIES ID siga moslandi
+    category: "XAMIRLI TAOMLAR",
     image_url: "/fresh-uzbek-achichuk-tomato-cucumber-onion-salad.jpg",
     available_on_mobile: true,
     available_on_website: true,

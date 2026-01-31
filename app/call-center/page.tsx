@@ -25,7 +25,7 @@ import {
 	Sun,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { submitOrder } from './actions'
 
 export default function ProfessionalCallCenter() {

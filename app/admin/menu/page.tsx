@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabaseClient'
 import { Edit2, Plus, Trash2, Utensils } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 // Export default sahifadagi "The default export is not a React Component" xatosini tuzatadi
 export default function AdminMenuPage() {

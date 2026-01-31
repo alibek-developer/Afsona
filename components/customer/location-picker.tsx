@@ -6,7 +6,7 @@ import { calculateDistance } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Loader2, Navigation } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 interface LocationPickerProps {
 	onLocationSelect: (address: string, distance: number, tooFar: boolean) => void
@@ -69,26 +69,13 @@ export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
 						setDistanceInfo({ dist, text: distanceText, tooFar, lat, lng: lon })
 						onLocationSelect(address, dist, tooFar)
 
-						if (tooFar) {
-							toast.warning(
-								`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-								{
-									style: {
-										background: '#F59E0B',
-										color: '#fff',
-										border: '2px solid black',
-									},
-								},
-							)
-						} else {
-							toast.success('Yetkazib berish hududi aniqlandi!', {
-								style: {
-									background: '#DC2626',
-									color: '#fff',
-									border: '2px solid black',
-								},
-							})
-						}
+			if (tooFar) {
+				toast.warning(
+					`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
+				)
+			} else {
+				toast.success('Yetkazib berish hududi aniqlandi!')
+			}
 					} else {
 						throw new Error('IP aniqlashda xatolik')
 					}
@@ -111,22 +98,9 @@ export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
 					if (tooFar) {
 						toast.warning(
 							`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-							{
-								style: {
-									background: '#F59E0B',
-									color: '#fff',
-									border: '2px solid black',
-								},
-							},
 						)
 					} else {
-						toast.success('Yetkazib berish hududi aniqlandi!', {
-							style: {
-								background: '#DC2626',
-								color: '#fff',
-								border: '2px solid black',
-							},
-						})
+						toast.success('Yetkazib berish hududi aniqlandi!')
 					}
 				}
 			} else {
@@ -148,22 +122,9 @@ export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
 				if (tooFar) {
 					toast.warning(
 						`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-						{
-							style: {
-								background: '#F59E0B',
-								color: '#fff',
-								border: '2px solid black',
-							},
-						},
 					)
 				} else {
-					toast.success('Yetkazib berish hududi aniqlandi!', {
-						style: {
-							background: '#DC2626',
-							color: '#fff',
-							border: '2px solid black',
-						},
-					})
+					toast.success('Yetkazib berish hududi aniqlandi!')
 				}
 			}
 		} catch (error) {

@@ -14,7 +14,7 @@ import {
   LayoutGrid, Loader2, Plus, Trash2
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])

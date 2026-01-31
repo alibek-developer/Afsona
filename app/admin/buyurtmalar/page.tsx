@@ -16,7 +16,7 @@ import {
 	User,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 // Statuslar xaritasi - Bazadagi status nomlari bilan mos bo'lishi shart
 const STATUS_MAP = {

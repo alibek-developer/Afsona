@@ -4,19 +4,15 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Price } from '@/components/ui/price'
 import { useCartStore } from '@/lib/store'
+import { toast } from '@/lib/toast'
 import type { MenuItem } from '@/lib/types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
 
-interface MenuCardProps {
-  item: MenuItem
-}
-
-export function MenuCard({ item }: MenuCardProps) {
+export function MenuCard({ item }: { item: MenuItem }) {
   const [added, setAdded] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isFlying, setIsFlying] = useState(false)
@@ -32,25 +28,20 @@ export function MenuCard({ item }: MenuCardProps) {
   const handleAddToCart = () => {
     addItem(item)
     setAdded(true)
-    
     const cartEl = document.querySelector('[data-cart-icon]')
-    
     if (buttonRef.current && cartEl) {
       const btnRect = buttonRef.current.getBoundingClientRect()
       const cartRect = cartEl.getBoundingClientRect()
-
       setFlyData({
         x: btnRect.left + btnRect.width / 2,
         y: btnRect.top + btnRect.height / 2,
         targetX: cartRect.left + cartRect.width / 2,
         targetY: cartRect.top + cartRect.height / 2
       })
-
       setIsFlying(true)
-      setTimeout(() => setIsFlying(false), 800)
+      setTimeout(() => setIsFlying(false), 900)
     }
-
-    toast.success(`${item.name} savatga qo'shildi`)
+    toast.success("Savatga qo'shildi!")
     setTimeout(() => setAdded(false), 2000)
   }
 
@@ -58,75 +49,64 @@ export function MenuCard({ item }: MenuCardProps) {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
+      initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }}
       className="h-full w-full"
     >
-      {/* CARD: Fon va hoshiyalar dark/light mode uchun moslandi */}
-      <Card className="group relative overflow-hidden bg-white dark:bg-[#0A0F1C] border-slate-200 dark:border-white/5 rounded-[2.5rem] h-full flex flex-col p-0 shadow-xl dark:shadow-2xl transition-all duration-500 hover:border-red-500/30">
+      <Card className="group relative flex h-full flex-col overflow-hidden border-none bg-white dark:bg-[#0F172A] rounded-[2rem] p-0 transition-all duration-500 ease-out
+        /* MARKETING SHADOWS & HOVER SCALE */
+        shadow-[0_10px_30px_rgba(0,0,0,0.05)]
+        dark:shadow-[0_15px_35px_rgba(0,0,0,0.3)]
+        hover:scale-[1.05] 
+        hover:z-30
+        hover:shadow-[0_25px_50px_rgba(220,38,38,0.15)]
+        dark:hover:shadow-[0_25px_50px_rgba(220,38,38,0.25)]">
         
-        {/* Image Section */}
-        <div className="relative w-full h-[220px] shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-900">
+        {/* IMAGE: CRITICAL FIX - Remove all gaps with block display and overflow hidden */}
+        <div className="relative w-full aspect-[16/10] overflow-hidden shrink-0 block leading-[0]">
           <Image
             src={item.image_url || '/placeholder.svg'}
             alt={item.name}
             fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110 block"
+            priority
           />
-          <div className="absolute top-4 right-5 z-20">
-            <span className="bg-slate-900/80 dark:bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border border-white/10 uppercase">
-              Hit
-            </span>
-          </div>
         </div>
 
-        {/* Content Section */}
-        <div className="p-7 flex flex-col flex-1">
-          <div className="flex-1 space-y-2">
-            {/* TEXT: Sarlavha rangi o'zgardi */}
-            <h3 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter line-clamp-1">
+        {/* CONTENT SECTION: No top padding to prevent gap */}
+        <div className="flex flex-1 flex-col px-5 py-5">
+          <div className="mb-4">
+            {/* TAOM NOMI */}
+            <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase transition-colors group-hover:text-red-600 leading-tight">
               {item.name}
             </h3>
-            {/* TEXT: Tavsif rangi o'zgardi */}
-            <p className="text-slate-600 dark:text-slate-400/80 text-[13px] leading-snug line-clamp-2 font-medium">
-              {item.description}
-            </p>
           </div>
 
-          <div className="mt-8 flex items-end justify-between">
-            <div className="flex flex-col space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Narxi</span>
-              {/* PRICE: Narx rangi dark/light ga qarab o'zgaradi */}
-              <Price value={item.price} className="text-[26px] font-black text-slate-900 dark:text-white tracking-tighter" />
+          {/* PRICE BOX: Marketing layout */}
+          <div className="mt-auto flex items-center justify-between bg-slate-50 dark:bg-white/5 p-3 rounded-[1.5rem] border border-slate-100 dark:border-white/10 group-hover:border-red-500/30 transition-all">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-red-600 mb-0.5">Narxi</span>
+              <Price value={item.price} className="text-xl font-black tracking-tighter text-slate-900 dark:text-white" />
             </div>
 
             <Button
               ref={buttonRef}
               onClick={handleAddToCart}
-              className={`h-14 w-14 rounded-2xl transition-all duration-300 relative overflow-hidden shadow-lg ${
+              className={`h-11 w-11 rounded-xl transition-all duration-300 shadow-md active:scale-90 ${
                 added 
-                ? 'bg-green-500 text-white scale-95 hover:bg-green-600' 
-                : 'bg-red-600 text-white hover:bg-red-500 hover:scale-105 active:scale-95 shadow-red-500/20'
+                ? 'bg-green-500 text-white hover:bg-green-600' 
+                : 'bg-red-600 text-white hover:bg-red-500 shadow-red-600/20'
               }`}
             >
               <AnimatePresence mode="wait">
                 {added ? (
-                  <motion.div
-                    key="check"
-                    initial={{ scale: 0, rotate: -45 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    exit={{ scale: 0 }}
-                  >
-                    <Check className="h-7 w-7 stroke-[3]" />
+                  <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                    <Check className="h-6 w-6 stroke-[3]" />
                   </motion.div>
                 ) : (
-                  <motion.div
-                    key="bag"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                  >
-                    <ShoppingBag className="h-7 w-7 stroke-[2]" />
+                  <motion.div key="bag" initial={{ y: 5 }} animate={{ y: 0 }} exit={{ y: -5 }}>
+                    <ShoppingBag className="h-6 w-6 stroke-[2.5]" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -135,29 +115,16 @@ export function MenuCard({ item }: MenuCardProps) {
         </div>
       </Card>
 
-      {/* Fly-to-Cart Animation */}
+      {/* FLY ANIMATION: Works perfectly in both themes */}
       {isFlying && createPortal(
         <motion.div
-          initial={{ 
-            x: flyData.x - 12, 
-            y: flyData.y - 12, 
-            scale: 1, 
-            opacity: 1 
-          }}
-          animate={{ 
-            x: flyData.targetX - 12, 
-            y: flyData.targetY - 12, 
-            scale: 0.2, 
-            opacity: 0.5 
-          }}
-          transition={{ 
-            duration: 0.8, 
-            ease: [0.45, 0, 0.55, 1],
-          }}
+          initial={{ x: flyData.x - 24, y: flyData.y - 24, scale: 1, opacity: 1 }}
+          animate={{ x: flyData.targetX - 24, y: flyData.targetY - 24, scale: 0.1, opacity: 0.2 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="fixed top-0 left-0 z-[9999] pointer-events-none"
         >
-          <div className="w-8 h-8 bg-red-600 rounded-full border-2 border-white shadow-lg shadow-red-500/50 flex items-center justify-center">
-             <ShoppingBag className="h-4 w-4 text-white" />
+          <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_25px_rgba(220,38,38,0.5)] border-2 border-white dark:border-slate-800">
+             <ShoppingBag className="h-6 w-6 text-white" />
           </div>
         </motion.div>,
         document.body

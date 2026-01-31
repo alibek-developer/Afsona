@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 interface CategoryFilterProps {
   selected: string | null

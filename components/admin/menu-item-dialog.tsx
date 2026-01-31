@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { ImagePlus, Loader2, UtensilsCrossed, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 export function MenuItemDialog({
   open,
@@ -98,7 +98,7 @@ export function MenuItemDialog({
       const { data } = supabase.storage.from('images').getPublicUrl(filePath)
       
       setFormData(prev => ({ ...prev, image_url: data.publicUrl }))
-      toast.success('Rasm tayyor!')
+      toast.success('Rasm muvaffaqiyatli yuklandi!')
     } catch (error: any) {
       toast.error('Yuklashda xatolik: ' + error.message)
     } finally {
@@ -142,7 +142,7 @@ export function MenuItemDialog({
 
       if (result.error) throw result.error
 
-      toast.success(editItem ? 'Yangilandi!' : "Qo'shildi!")
+      toast.success(editItem ? 'Taom yangilandi!' : 'Taom saqlandi!')
       onOpenChange(false)
       refreshData?.()
     } catch (err: any) {

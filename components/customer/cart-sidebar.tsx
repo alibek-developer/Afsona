@@ -92,16 +92,18 @@ export function CartSidebar() {
 								{/* Counter & Actions */}
 								<div className='flex items-center justify-between mt-2'>
 									<div className='flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-black dark:border-slate-700'>
-										<Button
-											variant='ghost'
-											size='icon'
-											className='h-7 w-7 hover:bg-white dark:hover:bg-slate-700'
-											onClick={() =>
-												updateQuantity(item.id, Math.max(1, item.quantity - 1))
-											}
-										>
-											<Minus className='h-3 w-3 stroke-[4]' />
-										</Button>
+							<Button
+  variant='ghost'
+  size='icon'
+  // Agar quantity 1 ga teng bo'lsa, tugma o'chadi
+  disabled={item.quantity <= 1} 
+  className='h-7 w-7 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed'
+  onClick={() =>
+    updateQuantity(item.id, Math.max(1, item.quantity - 1))
+  }
+>
+  <Minus className='h-3 w-3 stroke-[4]' />
+</Button>
 										<span className='w-8 text-center text-xs font-black dark:text-white'>
 											{item.quantity}
 										</span>

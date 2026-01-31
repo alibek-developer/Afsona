@@ -33,7 +33,6 @@ export function MenuCard({ item }: MenuCardProps) {
     addItem(item)
     setAdded(true)
     
-    // Savatcha ikonkasini topish (Navbardagi data-cart-icon)
     const cartEl = document.querySelector('[data-cart-icon]')
     
     if (buttonRef.current && cartEl) {
@@ -48,7 +47,6 @@ export function MenuCard({ item }: MenuCardProps) {
       })
 
       setIsFlying(true)
-      // Animatsiya davomiyligi bilan bir xil vaqtda o'chirish
       setTimeout(() => setIsFlying(false), 800)
     }
 
@@ -64,10 +62,11 @@ export function MenuCard({ item }: MenuCardProps) {
       animate={{ opacity: 1, y: 0 }}
       className="h-full w-full"
     >
-      <Card className="group relative overflow-hidden bg-[#0A0F1C] border border-white/5 rounded-[2.5rem] h-full flex flex-col p-0 shadow-2xl transition-all duration-500 hover:border-red-500/20">
+      {/* CARD: Fon va hoshiyalar dark/light mode uchun moslandi */}
+      <Card className="group relative overflow-hidden bg-white dark:bg-[#0A0F1C] border-slate-200 dark:border-white/5 rounded-[2.5rem] h-full flex flex-col p-0 shadow-xl dark:shadow-2xl transition-all duration-500 hover:border-red-500/30">
         
         {/* Image Section */}
-        <div className="relative w-full h-[220px] shrink-0 overflow-hidden">
+        <div className="relative w-full h-[220px] shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-900">
           <Image
             src={item.image_url || '/placeholder.svg'}
             alt={item.name}
@@ -75,7 +74,7 @@ export function MenuCard({ item }: MenuCardProps) {
             className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute top-4 right-5 z-20">
-            <span className="bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border border-white/10 uppercase">
+            <span className="bg-slate-900/80 dark:bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border border-white/10 uppercase">
               Hit
             </span>
           </div>
@@ -84,27 +83,30 @@ export function MenuCard({ item }: MenuCardProps) {
         {/* Content Section */}
         <div className="p-7 flex flex-col flex-1">
           <div className="flex-1 space-y-2">
-            <h3 className="font-black text-2xl text-white uppercase tracking-tighter line-clamp-1">
+            {/* TEXT: Sarlavha rangi o'zgardi */}
+            <h3 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter line-clamp-1">
               {item.name}
             </h3>
-            <p className="text-slate-400/80 text-[13px] leading-snug line-clamp-2 font-medium">
+            {/* TEXT: Tavsif rangi o'zgardi */}
+            <p className="text-slate-600 dark:text-slate-400/80 text-[13px] leading-snug line-clamp-2 font-medium">
               {item.description}
             </p>
           </div>
 
           <div className="mt-8 flex items-end justify-between">
             <div className="flex flex-col space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Narxi</span>
-              <Price value={item.price} className="text-[26px] font-black text-white tracking-tighter" />
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Narxi</span>
+              {/* PRICE: Narx rangi dark/light ga qarab o'zgaradi */}
+              <Price value={item.price} className="text-[26px] font-black text-slate-900 dark:text-white tracking-tighter" />
             </div>
 
             <Button
               ref={buttonRef}
               onClick={handleAddToCart}
-              className={`h-14 w-14 rounded-2xl transition-all duration-300 relative overflow-hidden ${
+              className={`h-14 w-14 rounded-2xl transition-all duration-300 relative overflow-hidden shadow-lg ${
                 added 
-                ? 'bg-green-500 text-white scale-95' 
-                : 'bg-red-600 text-white hover:bg-red-500 hover:scale-105 active:scale-90'
+                ? 'bg-green-500 text-white scale-95 hover:bg-green-600' 
+                : 'bg-red-600 text-white hover:bg-red-500 hover:scale-105 active:scale-95 shadow-red-500/20'
               }`}
             >
               <AnimatePresence mode="wait">
@@ -133,7 +135,7 @@ export function MenuCard({ item }: MenuCardProps) {
         </div>
       </Card>
 
-      {/* Fly-to-Cart Animatsiyasi (Portal) */}
+      {/* Fly-to-Cart Animation */}
       {isFlying && createPortal(
         <motion.div
           initial={{ 
@@ -150,11 +152,10 @@ export function MenuCard({ item }: MenuCardProps) {
           }}
           transition={{ 
             duration: 0.8, 
-            ease: [0.45, 0, 0.55, 1], // S-curve trayektoriya uchun
+            ease: [0.45, 0, 0.55, 1],
           }}
           className="fixed top-0 left-0 z-[9999] pointer-events-none"
         >
-          {/* Uchayotgan qizil doira yoki mahsulot rasmi kichraytirilgan varianti */}
           <div className="w-8 h-8 bg-red-600 rounded-full border-2 border-white shadow-lg shadow-red-500/50 flex items-center justify-center">
              <ShoppingBag className="h-4 w-4 text-white" />
           </div>

@@ -15,6 +15,7 @@ export default function AdminMenuPage() {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [isDialogOpen, setIsDialogOpen] = useState(false)
 	const [selectedItem, setSelectedItem] = useState<any>(null)
+	const [currentPage, setCurrentPage] = useState(1)
 
 	const fetchItems = async () => {
 		setLoading(true)
@@ -42,6 +43,14 @@ export default function AdminMenuPage() {
 	const filteredItems = items.filter(item =>
 		item.name?.toLowerCase().includes(searchQuery.toLowerCase()),
 	)
+
+	const totalPages = Math.ceil(filteredItems.length / 10)
+	const paginatedItems = filteredItems.slice((currentPage - 1) * 10, currentPage * 10)
+
+	// Reset to page 1 when search changes
+	useEffect(() => {
+		setCurrentPage(1)
+	}, [searchQuery])
 
 	return (
 		<div className='p-4 md:p-8 space-y-6'>
@@ -114,7 +123,7 @@ export default function AdminMenuPage() {
 									</td>
 								</tr>
 							) : (
-								filteredItems.map(item => (
+								paginatedItems.map(item => (
 									<tr
 										key={item.id}
 										className='hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors'
@@ -158,6 +167,28 @@ export default function AdminMenuPage() {
 					</table>
 				</div>
 			</div>
+
+			{/* Pagination */}
+			{totalPages > 1 && (
+				<div className='flex justify-center gap-2 mt-4'>
+					<Button
+						onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+						disabled={currentPage === 1}
+						variant='outline'
+						className='rounded-xl'
+					>
+						Previous
+					</Button>
+					<Button
+						onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+						disabled={currentPage === totalPages}
+						variant='outline'
+						className='rounded-xl'
+					>
+						Next
+					</Button>
+				</div>
+			)}
 
 			<MenuItemDialog
 				open={isDialogOpen}

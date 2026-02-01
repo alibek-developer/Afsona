@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Price } from '@/components/ui/price'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabaseClient'
 import {
 	ArrowDownRight,
 	ArrowUpRight,
@@ -12,7 +13,7 @@ import {
 	TrendingUp,
 	Users,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	Area,
 	AreaChart,
@@ -34,30 +35,177 @@ const data = [
 	{ time: '22:00', amount: 2800000 },
 ]
 
+// Currency formatting function
+const formatCurrency = (amount: number) => {
+	return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+}
+
 export default function AdminDashboard() {
-	const [stats] = useState({
+	const [selectedRange, setSelectedRange] = useState<'1day' | '1week' | '1month' | '1year'>('1day')
+	const [stats, setStats] = useState({
 		revenue: 29350000,
 		orders: 156,
 		customers: 1240,
 		avgTime: 32,
 	})
+	const [topItems, setTopItems] = useState([
+		{ name: 'Palov', count: 120, color: 'bg-red-600', percentage: 90 },
+		{ name: 'Manti', count: 98, color: 'bg-orange-600', percentage: 75 },
+		{ name: 'Lagmon', count: 86, color: 'bg-blue-600', percentage: 65 },
+		{ name: 'Shashlik', count: 72, color: 'bg-emerald-600', percentage: 50 },
+		{ name: 'Gijduvon Shashlik', count: 45, color: 'bg-purple-600', percentage: 35 },
+	])
+	const [loading, setLoading] = useState(false)
+
+	// Get date range based on selected time filter
+	const getDateRange = (range: string) => {
+		const now = new Date()
+		const start = new Date()
+
+		switch (range) {
+			case '1day':
+				start.setDate(now.getDate() - 1)
+				break
+			case '1week':
+				start.setDate(now.getDate() - 7)
+				break
+			case '1month':
+				start.setMonth(now.getMonth() - 1)
+				break
+			case '1year':
+				start.setFullYear(now.getFullYear() - 1)
+				break
+			default:
+				start.setDate(now.getDate() - 1)
+		}
+
+		return {
+			start: start.toISOString(),
+			end: now.toISOString()
+		}
+	}
+
+	// Fetch analytics data
+	const fetchAnalytics = async (range: string) => {
+		setLoading(true)
+		try {
+			const { start, end } = getDateRange(range)
+
+			// Fetch orders for the selected period
+			const { data: orders, error } = await supabase
+				.from('orders')
+				.select('total_amount, phone, items, created_at')
+				.gte('created_at', start)
+				.lte('created_at', end)
+
+			if (error) throw error
+
+			// Calculate revenue
+			const revenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+
+			// Calculate orders count
+			const ordersCount = orders?.length || 0
+
+			// Calculate unique customers (distinct phones)
+			const uniqueCustomers = new Set(orders?.map(order => order.phone).filter(Boolean))
+			const customersCount = uniqueCustomers.size
+
+			// Calculate top items
+			const itemCounts: { [key: string]: { name: string; count: number } } = {}
+			orders?.forEach(order => {
+				if (order.items && Array.isArray(order.items)) {
+					order.items.forEach((item: any) => {
+						if (item.name && item.quantity) {
+							if (itemCounts[item.name]) {
+								itemCounts[item.name].count += item.quantity
+							} else {
+								itemCounts[item.name] = { name: item.name, count: item.quantity }
+							}
+						}
+					})
+				}
+			})
+
+			// Sort items by count and take top 5
+			const sortedItems = Object.values(itemCounts)
+				.sort((a, b) => b.count - a.count)
+				.slice(0, 5)
+
+			// Calculate percentages for top items
+			const maxCount = sortedItems[0]?.count || 1
+			const topItemsWithPercentage = sortedItems.map((item, index) => {
+				const colors = ['bg-red-600', 'bg-orange-600', 'bg-blue-600', 'bg-emerald-600', 'bg-purple-600']
+				return {
+					name: item.name,
+					count: item.count,
+					color: colors[index] || 'bg-gray-600',
+					percentage: Math.round((item.count / maxCount) * 100)
+				}
+			})
+
+			setStats({
+				revenue,
+				orders: ordersCount,
+				customers: customersCount,
+				avgTime: 32, // Keep this static as it's not in the orders table
+			})
+
+			setTopItems(topItemsWithPercentage)
+
+		} catch (error) {
+			console.error('Analytics fetch error:', error)
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	useEffect(() => {
+		fetchAnalytics(selectedRange)
+	}, [selectedRange])
 
 	return (
 		<div className='space-y-10 transition-colors'>
 			{/* Sarlavha qismi */}
 			<div className='flex flex-col gap-1'>
-				<h1 className='text-4xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
-					Tizim <span className='text-red-600'>Analitikasi</span>
-				</h1>
-				<div className='flex items-center gap-3'>
-					<p className='text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]'>
-						Bugungi jonli statistika
-					</p>
-					<div className='flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full'>
-						<span className='h-2 w-2 rounded-full bg-emerald-500 animate-pulse' />
-						<span className='text-[10px] font-black text-emerald-500 uppercase'>
-							Live
-						</span>
+				<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+					<div className='flex flex-col gap-1'>
+						<h1 className='text-4xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
+							Tizim <span className='text-red-600'>Analitikasi</span>
+						</h1>
+						<div className='flex items-center gap-3'>
+							<p className='text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]'>
+								Bugungi jonli statistika
+							</p>
+							<div className='flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full'>
+								<span className='h-2 w-2 rounded-full bg-emerald-500 animate-pulse' />
+								<span className='text-[10px] font-black text-emerald-500 uppercase'>
+									Live
+								</span>
+							</div>
+						</div>
+					</div>
+
+					{/* Time Filter Tabs */}
+					<div className='flex bg-slate-100 dark:bg-slate-800 rounded-2xl p-1 gap-1'>
+						{[
+							{ key: '1day', label: '1 Kun' },
+							{ key: '1week', label: '1 Hafta' },
+							{ key: '1month', label: '1 Oy' },
+							{ key: '1year', label: '1 Yil' },
+						].map(({ key, label }) => (
+							<button
+								key={key}
+								onClick={() => setSelectedRange(key as any)}
+								className={cn(
+									'px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all',
+									selectedRange === key
+										? 'bg-white dark:bg-slate-700 text-red-600 shadow-sm'
+										: 'text-slate-600 dark:text-slate-400 hover:text-red-500'
+								)}
+							>
+								{label}
+							</button>
+						))}
 					</div>
 				</div>
 			</div>
@@ -65,9 +213,9 @@ export default function AdminDashboard() {
 			{/* Stats Cards - Hard Shadow uslubida */}
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
 				<StatCard
-					title='Kunlik Tushum'
+					title={`${selectedRange === '1day' ? 'Kunlik' : selectedRange === '1week' ? 'Haftalik' : selectedRange === '1month' ? 'Oylik' : 'Yillik'} Tushum`}
 					value={stats.revenue}
-					isPrice
+					formattedValue={formatCurrency(stats.revenue)}
 					trend='+12.5%'
 					trendUp={true}
 					icon={TrendingUp}
@@ -180,36 +328,25 @@ export default function AdminDashboard() {
 						</CardTitle>
 					</CardHeader>
 					<CardContent className='space-y-6 px-8 pb-8'>
-						<TopItem
-							name='Palov'
-							count={120}
-							color='bg-red-600'
-							percentage={90}
-						/>
-						<TopItem
-							name='Manti'
-							count={98}
-							color='bg-orange-600'
-							percentage={75}
-						/>
-						<TopItem
-							name='Lagmon'
-							count={86}
-							color='bg-blue-600'
-							percentage={65}
-						/>
-						<TopItem
-							name='Shashlik'
-							count={72}
-							color='bg-emerald-600'
-							percentage={50}
-						/>
-						<TopItem
-							name='Gijduvon Shashlik'
-							count={45}
-							color='bg-purple-600'
-							percentage={35}
-						/>
+						{loading ? (
+							<div className='text-center text-slate-400 dark:text-slate-500'>
+								Yuklanmoqda...
+							</div>
+						) : topItems.length > 0 ? (
+							topItems.map((item, index) => (
+								<TopItem
+									key={item.name}
+									name={item.name}
+									count={item.count}
+									color={item.color}
+									percentage={item.percentage}
+								/>
+							))
+						) : (
+							<div className='text-center text-slate-400 dark:text-slate-500'>
+								Ma'lumot mavjud emas
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -221,6 +358,7 @@ function StatCard({
 	title,
 	value,
 	isPrice,
+	formattedValue,
 	trend,
 	trendUp,
 	icon: Icon,
@@ -259,7 +397,7 @@ function StatCard({
 					</p>
 					<div className='flex items-baseline gap-1'>
 						<h3 className='text-2xl font-black text-slate-900 dark:text-white tracking-tighter'>
-							{isPrice ? <Price value={value} /> : value.toLocaleString()}
+							{formattedValue || (isPrice ? <Price value={value} /> : value.toLocaleString())}
 						</h3>
 						{unit && (
 							<span className='text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase'>

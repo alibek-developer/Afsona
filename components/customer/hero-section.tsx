@@ -135,7 +135,7 @@ export function HeroSection() {
             <div className='absolute inset-10 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-2xl'>
                {/* Bu yerga Palov yoki kabob rasmini qo'yasiz */}
                <img 
-                 src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070&auto=format&fit=crop" 
+                 src="./hero-1.png" 
                  alt="Main Dish"
                  className='w-full h-full object-cover hover:scale-110 transition-transform duration-700'
                />

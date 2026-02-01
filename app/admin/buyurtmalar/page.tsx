@@ -2,21 +2,21 @@
 
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabaseClient'
+import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-	Calendar,
-	ChevronLeft,
-	ChevronRight,
-	Clock,
-	Loader2,
-	MapPin,
-	Package,
-	Phone,
-	User,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Loader2,
+  MapPin,
+  Package,
+  Phone,
+  User,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from '@/lib/toast'
 
 // Statuslar xaritasi - Bazadagi status nomlari bilan mos bo'lishi shart
 const STATUS_MAP = {

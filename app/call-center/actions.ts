@@ -17,8 +17,7 @@ export async function submitOrder(orderData: any) {
 				type: orderData.type, // 'delivery' yoki 'dine_in'
 				items: orderData.items, // JSON formatda
 				total_amount: orderData.total_amount,
-				status: 'new', // Standart status
-				payment_method: 'cash',
+				status: orderData.status || 'yangi',
 			},
 		])
 

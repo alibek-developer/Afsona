@@ -31,9 +31,9 @@ export default function AboutPage() {
   }, [emblaApi])
 
   const carouselImages = [
-    '/uzbek-restaurant-interior-traditional-decor.jpg',
-    '/uzbek-restaurant-interior-traditional-decor.jpg',
-    '/uzbek-restaurant-interior-traditional-decor.jpg',
+    './hero-1.png',
+    './hero-1.png',
+    './hero-1.png',
   ]
 
   return (
@@ -83,7 +83,7 @@ export default function AboutPage() {
             <div className='absolute -inset-4 bg-red-600/10 dark:bg-red-600/20 rounded-[4rem] blur-2xl group-hover:bg-red-600/20 transition-all'></div>
             <div className='relative rounded-[3rem] overflow-hidden border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] p-3 shadow-xl'>
                 <div className='relative aspect-square rounded-[2.5rem] overflow-hidden'>
-                    <Image src='/uzbek-restaurant-interior-traditional-decor.jpg' fill className='object-cover' alt='About' />
+                    <Image src='./hero-1.png' fill className='object-cover' alt='About' />
                 </div>
             </div>
             {/* Floating Badge */}
@@ -125,7 +125,7 @@ export default function AboutPage() {
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-40'>
           {[
             { icon: Clock, title: 'Ish vaqti', desc: '10:00 - 23:00', label: 'Har kuni' },
-            { icon: MapPin, title: 'Manzil', desc: 'Toshkent sh.', label: 'Amir Temur 1' },
+            { icon: MapPin, title: 'Manzil', desc: 'Shovot', label: 'Amir Temur 1' },
             { icon: Phone, title: 'Aloqa', desc: '+998 71 123', label: 'Ishonch telefoni' },
             { icon: Users, title: "Sig'im", desc: "100+ o'rin", label: 'Oilaviy xonalar' },
           ].map((item, idx) => (

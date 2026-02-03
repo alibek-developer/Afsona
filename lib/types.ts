@@ -8,6 +8,7 @@ export interface MenuItem {
 	available_on_mobile: boolean
 	available_on_website: boolean
 	is_active?: boolean
+	is_available?: boolean
 }
 
 export interface CartItem extends MenuItem {

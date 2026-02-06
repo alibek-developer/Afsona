@@ -111,11 +111,12 @@ export function Footer() {
 
 							<div className='flex flex-wrap justify-center gap-x-4 gap-y-2'>
 								{[
-									{ name: 'Asadbek Rakhimov', href: '#' },
+									{ name: 'Asadbek Rakhimov', href: 'https://www.asadbekjs.uz/' },
 									{ name: 'Alibek Allaberganov', href: '#' },
 									{ name: 'Farkhad Ruzimov', href: '#' },
 								].map((dev, idx) => (
 									<Link
+									target='_blank'
 										key={idx}
 										href={dev.href}
 										className='text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-500 transition-colors border-b border-transparent hover:border-red-600'

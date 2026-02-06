@@ -6,16 +6,16 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuth'
 import { cn } from '@/lib/utils'
 import {
-	Armchair,
-	BarChart3,
-	LayoutDashboard,
-	LayoutGrid,
-	Loader2,
-	LogOut,
-	Menu,
-	Moon,
-	Sun,
-	UtensilsCrossed,
+  Armchair,
+  BarChart3,
+  LayoutDashboard,
+  LayoutGrid,
+  Loader2,
+  LogOut,
+  Menu,
+  Moon,
+  Sun,
+  UtensilsCrossed,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -67,7 +67,7 @@ export default function AdminLayout({
     { href: '/admin', label: 'Dashboard', icon: BarChart3 },
     { href: '/admin/order', label: 'Buyurtmalar', icon: LayoutDashboard },
     { href: '/admin/reservation', label: 'Xonalar & Stollar', icon: Armchair },
-    { href: '/admin/category', label: 'Kategoriyalar', icon: LayoutGrid },
+    { href: '/admin/categories', label: 'Kategoriyalar', icon: LayoutGrid },
     { href: '/admin/menu', label: 'Menu tahrirlash', icon: UtensilsCrossed },
   ]
 

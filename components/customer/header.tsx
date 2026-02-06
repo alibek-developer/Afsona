@@ -39,17 +39,17 @@ export function Header() {
 
 	const isDark = resolvedTheme === 'dark'
 
+	// Yangi nomlar qo'yildi, call-center olib tashlandi
 	const navLinks = [
 		{ href: '/', label: 'Bosh sahifa' },
 		{ href: '/menu', label: 'Menyu' },
+		{ href: '/reservations', label: 'Stol band qilish' }, // ← chiroyli va qisqa variant
 		{ href: '/about', label: 'Biz haqimizda' },
 	]
 
 	return (
 		<header className='sticky top-0 z-50 w-full transition-all duration-300'>
-			{/* TUZATISH: Blur fonini alohida divda faqat asosiy Header balandligida saqlaymiz.
-        Bu mobil menyu ochilganda blur pastga qarab cho'zilib ketishini oldini oladi.
-      */}
+			{/* Blur fon */}
 			<div className='absolute top-0 left-0 right-0 h-16 md:h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800' />
 
 			<div className='relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -65,7 +65,7 @@ export function Header() {
 								priority
 							/>
 						</div>
-						<span className='font-black text-xl tracking-tighter text-slate-900 dark:text-white uppercase '>
+						<span className='font-black text-xl tracking-tighter text-slate-900 dark:text-white uppercase'>
 							Afsona
 						</span>
 					</Link>
@@ -99,7 +99,7 @@ export function Header() {
 							)}
 						</Button>
 
-						{/* Savatcha Qismi */}
+						{/* Savatcha */}
 						<Sheet>
 							<SheetTrigger asChild>
 								<div className='relative'>
@@ -107,10 +107,7 @@ export function Header() {
 										key={cartPulseKey}
 										animate={
 											itemCount > 0 && cartPulseKey > 0
-												? {
-														y: [0, -8, 0],
-														rotate: [0, -10, 10, 0],
-													}
+												? { y: [0, -8, 0], rotate: [0, -10, 10, 0] }
 												: {}
 										}
 										transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -131,9 +128,9 @@ export function Header() {
 												animate={{ scale: 1, x: 0, y: 0 }}
 												exit={{ scale: 0 }}
 												className='absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center 
-                                   bg-red-600 text-white text-[11px] font-black rounded-[8px] 
-                                   shadow-[0_4px_12px_rgba(220,38,38,0.4)] border-2 border-white dark:border-slate-950
-                                   pointer-events-none'
+                          bg-red-600 text-white text-[11px] font-black rounded-[8px] 
+                          shadow-[0_4px_12px_rgba(220,38,38,0.4)] border-2 border-white dark:border-slate-950
+                          pointer-events-none'
 											>
 												{itemCount}
 											</motion.span>
@@ -169,7 +166,6 @@ export function Header() {
 						initial={{ opacity: 0, y: -20 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -20 }}
-						/* Mobil menyu foni endi header bluriga bog'liq emas */
 						className='md:hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800'
 					>
 						<div className='flex flex-col p-4 gap-2'>

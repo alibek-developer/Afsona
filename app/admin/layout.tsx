@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuth'
 import { cn } from '@/lib/utils'
 import {
+	Armchair,
 	BarChart3,
 	LayoutDashboard,
 	LayoutGrid,
@@ -19,7 +20,6 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-  /* Removed imported CategoryManagerDialog */
 
 export default function AdminLayout({
   children,
@@ -30,7 +30,7 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
     const isDark =
@@ -62,11 +62,12 @@ export default function AdminLayout({
     window.location.href = '/login'
   }
 
-  // NAV ITEMS: Kategoriyalar shu yerga qo'shildi
+  // NAV ITEMS
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: BarChart3 },
-    { href: '/admin/buyurtmalar', label: 'Buyurtmalar', icon: LayoutDashboard },
-    { href: '/admin/categories', label: 'Kategoriyalar', icon: LayoutGrid },
+    { href: '/admin/order', label: 'Buyurtmalar', icon: LayoutDashboard },
+    { href: '/admin/reservation', label: 'Xonalar & Stollar', icon: Armchair },
+    { href: '/admin/category', label: 'Kategoriyalar', icon: LayoutGrid },
     { href: '/admin/menu', label: 'Menu tahrirlash', icon: UtensilsCrossed },
   ]
 
@@ -86,15 +87,15 @@ export default function AdminLayout({
             <UtensilsCrossed size={20} className='text-white' />
           </div>
           <h1 className='font-black text-2xl tracking-tighter uppercase text-slate-900 dark:text-white'>
-            Oshxona<span className='text-red-600'>.</span>
+            Afsona<span className='text-red-600'>.</span>
           </h1>
         </div>
         <p className='text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]'>
-          Admin Panel
+          Boshqaruv Paneli
         </p>
       </div>
 
-      <nav className='flex-1 px-4 space-y-2 py-8'>
+      <nav className='flex-1 px-4 space-y-2 py-8 overflow-y-auto'>
         {navItems.map(item => {
           const isActive =
             item.href === '/admin'
@@ -113,7 +114,12 @@ export default function AdminLayout({
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-red-600',
               )}
             >
-              <item.icon className={cn('h-5 w-5', isActive ? 'text-white' : 'group-hover:scale-110')} />
+              <item.icon
+                className={cn(
+                  'h-5 w-5',
+                  isActive ? 'text-white' : 'group-hover:scale-110',
+                )}
+              />
               {item.label}
             </Link>
           )
@@ -126,8 +132,12 @@ export default function AdminLayout({
           onClick={toggleDarkMode}
           className='w-full justify-start text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl h-12 font-bold uppercase text-[10px] tracking-widest'
         >
-          {darkMode ? <Sun className='h-5 w-5 mr-3 text-yellow-500' /> : <Moon className='h-5 w-5 mr-3' />}
-          {darkMode ? 'Light Mode' : 'Dark Mode'}
+          {darkMode ? (
+            <Sun className='h-5 w-5 mr-3 text-yellow-500' />
+          ) : (
+            <Moon className='h-5 w-5 mr-3' />
+          )}
+          {darkMode ? 'Kunduzgi rejim' : 'Tungi rejim'}
         </Button>
 
         <Button
@@ -151,11 +161,15 @@ export default function AdminLayout({
       <main className='flex-1 flex flex-col min-w-0'>
         <div className='md:hidden h-20 bg-white dark:bg-[#0f172a] border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40'>
           <h1 className='font-black text-xl tracking-tighter uppercase'>
-            Oshxona<span className='text-red-600'>.</span>
+            Afsona<span className='text-red-600'>.</span>
           </h1>
           <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant='ghost' size='icon' className='rounded-xl bg-slate-100 dark:bg-slate-800'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='rounded-xl bg-slate-100 dark:bg-slate-800'
+              >
                 <Menu className='h-6 w-6' />
               </Button>
             </SheetTrigger>
@@ -165,8 +179,8 @@ export default function AdminLayout({
           </Sheet>
         </div>
 
-        <div className='p-6 md:p-12'>
-          <div className='max-w-6xl mx-auto'>{children}</div>
+        <div className='p-6 md:p-10'>
+          <div className='max-w-7xl mx-auto'>{children}</div>
         </div>
       </main>
     </div>

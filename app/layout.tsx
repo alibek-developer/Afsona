@@ -17,8 +17,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang='uz' suppressHydrationWarning>
-			<body className='antialiased font-sans'>
-				<ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
+			<body className='antialiased font-sans min-h-screen text-foreground'>
+				<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
 					{children}
 					<ToastContainer />
 					<Analytics />

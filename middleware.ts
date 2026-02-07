@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
 		if (user && email) {
 			// Admin uchun
 			if (email === 'a1ibekdew0@gmail.com') {
-				return NextResponse.redirect(new URL('/admin/buyurtmalar', request.url))
+				return NextResponse.redirect(new URL('/admin/order', request.url))
 			}
 			// Operator uchun
 			if (email === 'inoqdost478@gmail.com') {

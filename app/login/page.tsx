@@ -57,7 +57,7 @@ export default function LoginPage() {
 			await new Promise(resolve => setTimeout(resolve, 300))
 
 			if (userEmail === 'a1ibekdew0@gmail.com') {
-				window.location.href = '/admin/buyurtmalar'
+				window.location.href = '/admin/order'
 			} else if (userEmail === 'inoqdost478@gmail.com') {
 				window.location.href = '/call-center'
 			} else {

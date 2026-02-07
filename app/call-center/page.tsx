@@ -245,7 +245,7 @@ export default function UniversalCallCenterPanel() {
 
     setRoomSubmitting(true)
     try {
-      const { error } = await supabase.from('reservations').insert([{
+      const { error } = await supabase.from('table_reservations').insert([{
         table_id: selectedTable.id,
         customer_name: roomCustomerName.trim(),
         phone: roomPhone.trim(),

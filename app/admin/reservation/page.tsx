@@ -10,27 +10,28 @@ import { Armchair, Edit2, Loader2, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 
-interface Table {
+interface Xona {
   id: string
   name: string
   capacity: number
   price_per_hour: number
   image_url: string
   is_available: boolean
+  floor: string
 }
 
 export default function AdminTablesPage() {
-  const [tables, setTables] = useState<Table[]>([])
+  const [xonalar, setXonalar] = useState<Xona[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('') // searchTerm aniqlandi
+  const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingTable, setEditingTable] = useState<Table | null>(null)
+  const [editingXona, setEditingXona] = useState<Xona | null>(null)
 
   useEffect(() => {
-    fetchTables()
+    fetchXonalar()
   }, [])
 
-  async function fetchTables() {
+  async function fetchXonalar() {
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -39,7 +40,7 @@ export default function AdminTablesPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setTables(data || [])
+      setXonalar(data || [])
     } catch (error: any) {
       toast.error("Ma'lumotlarni yuklashda xato!")
     } finally {
@@ -53,15 +54,15 @@ export default function AdminTablesPage() {
       const { error } = await supabase.from('tables').delete().eq('id', id)
       if (error) throw error
       toast.success("O'chirildi")
-      fetchTables()
+      fetchXonalar()
     } catch (error: any) {
       toast.error(error.message)
     }
   }
 
   // Qidiruv filtri
-  const filteredTables = tables.filter(table =>
-    table.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredXonalar = xonalar.filter(xona =>
+    xona.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -91,7 +92,7 @@ export default function AdminTablesPage() {
             />
           </div>
           <Button 
-            onClick={() => { setEditingTable(null); setIsModalOpen(true) }}
+            onClick={() => { setEditingXona(null); setIsModalOpen(true) }}
             className="rounded-xl font-black uppercase text-xs tracking-widest px-6"
           >
             <Plus className="w-4 h-4 mr-2" /> Qo'shish
@@ -109,6 +110,7 @@ export default function AdminTablesPage() {
               <thead>
                 <tr className="border-b border-border text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                   <th className="px-8 py-6">Xona</th>
+                  <th className="px-8 py-6">Qavat</th>
                   <th className="px-8 py-6">Sig'im</th>
                   <th className="px-8 py-6">Narx</th>
                   <th className="px-8 py-6">Holat</th>
@@ -116,32 +118,37 @@ export default function AdminTablesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredTables.map((table) => (
-                  <tr key={table.id} className="hover:bg-muted/30 transition-colors group">
+                {filteredXonalar.map((xona) => (
+                  <tr key={xona.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-4">
-                        <img src={table.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
-                        <span className="text-sm font-bold uppercase">{table.name}</span>
+                        <img src={xona.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                        <span className="text-sm font-bold uppercase">{xona.name}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-sm font-mono">{table.capacity} kishi</td>
+                    <td className="px-8 py-5">
+                      <Badge variant="outline" className="rounded-lg px-3 py-1 text-[10px] font-black border-none bg-blue-500/10 text-blue-500">
+                        {xona.floor}
+                      </Badge>
+                    </td>
+                    <td className="px-8 py-5 text-sm font-mono">{xona.capacity} kishi</td>
                     <td className="px-8 py-5 text-sm font-black text-primary">
-                      {Number(table.price_per_hour).toLocaleString()} <small>SO'M</small>
+                      {Number(xona.price_per_hour).toLocaleString()} <small>SO'M</small>
                     </td>
                     <td className="px-8 py-5">
                       <Badge variant="outline" className={cn(
                         "rounded-lg px-3 py-1 text-[10px] font-black border-none",
-                        table.is_available ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+                        xona.is_available ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
                       )}>
-                        {table.is_available ? "BO'SH" : "BAND"}
+                        {xona.is_available ? "BO'SH" : "BAND"}
                       </Badge>
                     </td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingTable(table); setIsModalOpen(true) }}>
+                        <Button variant="ghost" size="icon" onClick={() => { setEditingXona(xona); setIsModalOpen(true) }}>
                           <Edit2 size={16} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => handleDelete(table.id)}>
+                        <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => handleDelete(xona.id)}>
                           <Trash2 size={16} />
                         </Button>
                       </div>
@@ -157,8 +164,8 @@ export default function AdminTablesPage() {
       <TableManagerModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchTables}
-        data={editingTable}
+        onSuccess={fetchXonalar}
+        data={editingXona}
       />
     </div>
   )

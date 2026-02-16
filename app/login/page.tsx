@@ -37,7 +37,7 @@ export default function LoginPage() {
 		setError(null)
 
 		try {
-			const allowedEmails = ['a1ibekdew0@gmail.com', 'inoqdost478@gmail.com']
+			const allowedEmails = ['a1ibekdew0@gmail.com', 'inoqdost478@gmail.com', 'trajabboyev@gmail.com']
 			if (!allowedEmails.includes(email.toLowerCase().trim())) {
 				throw new Error('Ruxsat etilmagan foydalanuvchi')
 			}
@@ -60,6 +60,8 @@ export default function LoginPage() {
 				window.location.href = '/admin/order'
 			} else if (userEmail === 'inoqdost478@gmail.com') {
 				window.location.href = '/call-center'
+			} else if (userEmail === 'trajabboyev@gmail.com') {
+				window.location.href = '/kitchen'
 			} else {
 				throw new Error('Sizning rolingiz aniqlanmadi')
 			}

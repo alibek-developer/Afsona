@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { supabase } from '@/lib/supabaseClient'
 
-type Role = 'admin' | 'operator' | 'unknown'
+type Role = 'admin' | 'operator' | 'kitchen' | 'unknown'
 
 type AuthState = {
 	loading: boolean
@@ -16,6 +16,7 @@ function resolveRole(email: string | null): Role {
 	const normalized = email?.toLowerCase().trim() ?? null
 	if (normalized === 'a1ibekdew0@gmail.com') return 'admin'
 	if (normalized === 'inoqdost478@gmail.com') return 'operator'
+	if (normalized === 'trajabboyev@gmail.com') return 'kitchen'
 	return 'unknown'
 }
 

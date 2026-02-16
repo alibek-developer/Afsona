@@ -1,6 +1,5 @@
 'use client'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,25 +11,19 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuth'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Loader2, LogOut, Menu, Moon, Sun, UtensilsCrossed } from 'lucide-react'
+import { ChefHat, Loader2, LogOut, Menu, Moon, Sun } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const navItems = [
-  { href: '/admin/dashboard', label: 'Dashboard' },
-  { href: '/admin/order', label: 'Buyurtmalar' },
-  { href: '/admin/reservation', label: 'Xonalar' },
-  { href: '/admin/categories', label: 'Kategoriyalar' },
-  { href: '/admin/menu', label: 'Menu' },
-]
+const navItems = [{ href: '/kitchen', label: 'Oshxona' }]
 
-export default function AdminLayout({
+export default function KitchenLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { loading, email } = useAuthGuard({ allowRoles: ['admin'] })
+  const { loading, email } = useAuthGuard({ allowRoles: ['kitchen'] })
   const pathname = usePathname()
   const [darkMode, setDarkMode] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -96,22 +89,25 @@ export default function AdminLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/admin/dashboard" className="flex items-center gap-3 group">
+            <Link href="/kitchen" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="w-9 h-9 bg-[#FF0000] rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25 transition-transform duration-300 group-hover:scale-105">
-                  <UtensilsCrossed size={18} className="text-white" />
+                  <ChefHat size={18} className="text-white" />
                 </div>
                 <div className="absolute inset-0 bg-[#FF0000] rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
               </div>
               <span className="font-display text-xl font-bold text-foreground tracking-tight">
                 Afsona
               </span>
+              <span className="hidden sm:inline text-xs text-muted-foreground font-medium px-2 py-1 bg-muted rounded-lg">
+                Kitchen
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href)
+                const isActive = pathname === item.href
                 return (
                   <Link
                     key={item.href}
@@ -126,7 +122,7 @@ export default function AdminLayout({
                     {item.label}
                     {isActive && (
                       <motion.div
-                        layoutId="activeNav"
+                        layoutId="activeNavKitchen"
                         className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#FF0000] rounded-full"
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       />
@@ -155,13 +151,13 @@ export default function AdminLayout({
               {/* Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-[#FF0000] to-[#cc0000] flex items-center justify-center text-white font-medium text-sm shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-shadow">
-                    A
+                  <button className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-medium text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-shadow">
+                    K
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 mt-2">
                   <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-foreground">Admin</p>
+                    <p className="text-sm font-semibold text-foreground">Kitchen</p>
                     <p className="text-xs text-muted-foreground truncate">{email}</p>
                   </div>
                   <DropdownMenuSeparator />
@@ -195,7 +191,7 @@ export default function AdminLayout({
             >
               <div className="flex flex-col gap-1">
                 {navItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href)
+                  const isActive = pathname === item.href
                   return (
                     <Link
                       key={item.href}

@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
 	const path = request.nextUrl.pathname
 
 	const isProtected =
-		path.startsWith('/admin') || path.startsWith('/call-center')
+		path.startsWith('/admin') || path.startsWith('/call-center') || path.startsWith('/kitchen')
 
 	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 	const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -84,6 +84,22 @@ export async function middleware(request: NextRequest) {
 				return NextResponse.redirect(new URL('/login', request.url))
 			}
 		}
+
+		// Kitchen yo'nalishlari - faqat kitchen uchun
+		if (path.startsWith('/kitchen')) {
+			if (email !== 'trajabboyev@gmail.com') {
+				// Agar admin bo'lsa, uni admin ga yo'naltir
+				if (email === 'a1ibekdew0@gmail.com') {
+					return NextResponse.redirect(new URL('/admin/order', request.url))
+				}
+				// Agar operator bo'lsa, uni call-center ga yo'naltir
+				if (email === 'inoqdost478@gmail.com') {
+					return NextResponse.redirect(new URL('/call-center', request.url))
+				}
+				// Boshqa foydalanuvchilar uchun login
+				return NextResponse.redirect(new URL('/login', request.url))
+			}
+		}
 	}
 
 	// 2. LOGIN SAHIFASI: Tizimga kirganlarni tegishli panelga yo'naltirish
@@ -96,6 +112,10 @@ export async function middleware(request: NextRequest) {
 			// Operator uchun
 			if (email === 'inoqdost478@gmail.com') {
 				return NextResponse.redirect(new URL('/call-center', request.url))
+			}
+			// Kitchen uchun
+			if (email === 'trajabboyev@gmail.com') {
+				return NextResponse.redirect(new URL('/kitchen', request.url))
 			}
 			// Noma'lum foydalanuvchi - sessiyani tozalash
 			if (supabase) {

@@ -1,39 +1,42 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuth'
 import { cn } from '@/lib/utils'
-import {
-  Building2,
-  Loader2,
-  LogOut,
-  Menu,
-  Moon,
-  Phone,
-  Sun,
-  UtensilsCrossed,
-} from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Building2, Loader2, LogOut, Menu, Moon, Phone, ShoppingBag, Sun, UtensilsCrossed } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+const navItems = [
+  { href: '/call-center', label: 'Asosiy', icon: Phone },
+  { href: '/call-center/orders', label: 'Buyurtmalar', icon: ShoppingBag },
+  { href: '/call-center/rooms', label: 'Xonalar', icon: Building2 },
+  { href: '/call-center/menu', label: 'Taomlar', icon: UtensilsCrossed },
+]
 
 export default function CallCenterLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { loading } = useAuthGuard({ allowRoles: ['admin', 'operator'] })
+  const { loading, email } = useAuthGuard({ allowRoles: ['admin', 'operator'] })
   const pathname = usePathname()
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
-    const isDark =
-      savedTheme === 'dark' ||
-      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
 
     setDarkMode(isDark)
     if (isDark) {
@@ -41,6 +44,12 @@ export default function CallCenterLayout({
     } else {
       document.documentElement.classList.remove('dark')
     }
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const toggleDarkMode = () => {
@@ -60,130 +69,168 @@ export default function CallCenterLayout({
     window.location.href = '/login'
   }
 
-  // NAV ITEMS
-  const navItems = [
-    { href: '/call-center', label: 'Asosiy', icon: Phone },
-    { href: '/call-center/rooms', label: 'Xonalar', icon: Building2 },
-    { href: '/call-center/menu', label: 'Taomlar', icon: UtensilsCrossed },
-  ]
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0B1220]">
-        <Loader2 className="h-10 w-10 animate-spin text-red-600" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-[#FF0000]" />
+          <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        </div>
       </div>
     )
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white dark:bg-[#0B1220] border-r border-slate-200 dark:border-slate-800 transition-colors duration-300">
-      {/* Logo */}
-      <div className="p-8 border-b border-slate-100 dark:border-slate-800/50">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
-            <Phone size={20} className="text-white" />
-          </div>
-          <h1 className="font-black text-2xl tracking-tighter uppercase text-slate-900 dark:text-white">
-            Afsona<span className="text-red-600">.</span>
-          </h1>
-        </div>
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
-          Call-Center Panel
-        </p>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2 py-8 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === '/call-center'
-              ? pathname === '/call-center'
-              : pathname.startsWith(item.href)
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsMobileOpen(false)}
-              className={cn(
-                'group flex items-center gap-3 px-5 py-4 rounded-2xl transition-all duration-300 text-sm font-black uppercase tracking-wider',
-                isActive
-                  ? 'bg-red-600 text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-red-600'
-              )}
-            >
-              <item.icon
-                className={cn(
-                  'h-5 w-5',
-                  isActive ? 'text-white' : 'group-hover:scale-110'
-                )}
-              />
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* Footer Actions */}
-      <div className="p-6 border-t border-slate-100 dark:border-slate-800/50 space-y-2">
-        <Button
-          variant="ghost"
-          onClick={toggleDarkMode}
-          className="w-full justify-start text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl h-12 font-bold uppercase text-[10px] tracking-widest"
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5 mr-3 text-yellow-500" />
-          ) : (
-            <Moon className="h-5 w-5 mr-3" />
-          )}
-          {darkMode ? 'Kunduzgi rejim' : 'Tungi rejim'}
-        </Button>
-
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className="w-full justify-start text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl h-12 font-bold uppercase text-[10px] tracking-widest"
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          Chiqish
-        </Button>
-      </div>
-    </div>
-  )
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] flex transition-colors duration-300">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-72 shrink-0 h-screen sticky top-0">
-        <SidebarContent />
-      </aside>
+    <div className="min-h-screen bg-background">
+      {/* Premium Glass Header */}
+      <header
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+          scrolled
+            ? 'glass dark:glass-dark shadow-lg'
+            : 'bg-background/80 dark:bg-background/80'
+        )}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/call-center" className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="w-9 h-9 bg-[#FF0000] rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25 transition-transform duration-300 group-hover:scale-105">
+                  <Phone size={18} className="text-white" />
+                </div>
+                <div className="absolute inset-0 bg-[#FF0000] rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+              </div>
+              <div>
+                <span className="font-display text-xl font-bold text-foreground tracking-tight">
+                  Afsona
+                </span>
+                <span className="hidden sm:inline text-xs text-muted-foreground font-medium px-2 py-0.5 bg-muted rounded-lg ml-2">
+                  Call-Center
+                </span>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'relative px-4 py-2 text-sm font-medium transition-colors rounded-lg',
+                      isActive
+                        ? 'text-[#FF0000]'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {item.label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeNavCallCenter"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#FF0000] rounded-full"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-2">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="relative h-9 w-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ rotate: darkMode ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </motion.div>
+              </button>
+
+              {/* Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-shadow">
+                    C
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-2">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-semibold text-foreground">Call-Center</p>
+                    <p className="text-xs text-muted-foreground truncate">{email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-[#FF0000] focus:text-[#FF0000] focus:bg-red-50 dark:focus:bg-red-950/20 cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Chiqish
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mobile Menu Button */}
+              <button
+                className="md:hidden h-9 w-9 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted transition-colors"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <motion.nav
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden py-3 border-t border-border"
+            >
+              <div className="flex flex-col gap-1">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        'px-3 py-2.5 text-sm font-medium rounded-xl transition-colors',
+                        isActive
+                          ? 'text-[#FF0000] bg-red-50 dark:bg-red-950/20'
+                          : 'text-muted-foreground hover:bg-muted'
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </motion.nav>
+          )}
+        </div>
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <div className="md:hidden h-20 bg-white dark:bg-[#0B1220] border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between sticky top-0 z-40">
-          <h1 className="font-black text-xl tracking-tighter uppercase text-slate-900 dark:text-white">
-            Afsona<span className="text-red-600">.</span>
-          </h1>
-          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-xl bg-slate-100 dark:bg-slate-800"
-              >
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-80 border-none">
-              <SidebarContent />
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Page Content */}
-        <div className="p-6 md:p-10">
-          <div className="max-w-7xl mx-auto">{children}</div>
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {children}
+          </motion.div>
         </div>
       </main>
     </div>

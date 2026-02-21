@@ -34,6 +34,9 @@ export default function CheckoutPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [orderPlaced, setOrderPlaced] = useState(false)
 	const [subtotal, setSubtotal] = useState(0)
+	// New state variables for geolocation
+	const [latitude, setLatitude] = useState<number | null>(null)
+	const [longitude, setLongitude] = useState<number | null>(null)
 
 	useEffect(() => {
 		if (mounted) setSubtotal(getTotal())
@@ -51,10 +54,26 @@ export default function CheckoutPage() {
 		}
 	}
 
+	// Updated onLocationSelect callback to handle coordinates
+	const handleLocationSelect = (address: string, distance: number, tooFar: boolean, lat?: number, lng?: number) => {
+		setDeliveryAddress(address);
+		
+		if (lat !== undefined && lng !== undefined) {
+			setLatitude(lat);
+			setLongitude(lng);
+			console.log("Latitude:", lat);
+			console.log("Longitude:", lng);
+		} else {
+			// If coordinates are not provided, clear them
+			setLatitude(null);
+			setLongitude(null);
+		}
+	};
+
 	const handlePlaceOrder = async () => {
 		if (isSubmitting) return
 
-		// O'zbekiston raqami jami 13 ta belgi bo'lishi kerak (+998XXXXXXXXX)
+		// Validate required fields
 		if (!customerName.trim() || customerPhone.trim().length !== 13) {
 			toast.error("Iltimos, ismingizni va telefon raqamingizni to'liq kiriting")
 			return
@@ -65,20 +84,36 @@ export default function CheckoutPage() {
 			return
 		}
 
+		// Validate geolocation for delivery orders
+		if (orderMode === 'delivery') {
+			if (latitude === null || longitude === null) {
+				toast.error("Yetkazib berish manzilini aniqlash uchun joylashuvni aniqlang");
+				return;
+			}
+		}
+
 		setIsSubmitting(true)
 		try {
-			const { error } = await supabase.from('orders').insert([
-				{
-					customer_name: customerName.trim(),
-					phone: customerPhone.trim(),
-					delivery_address:
-						orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
-					type: orderMode,
-					status: 'yangi',
-					items,
-					total_amount: subtotal,
-				},
-			])
+			// Prepare order data
+			const orderData: any = {
+				customer_name: customerName.trim(),
+				phone: customerPhone.trim(),
+				delivery_address:
+					orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
+				type: orderMode,
+				status: 'yangi',
+				items,
+				total_amount: subtotal,
+				source: 'website'
+			};
+
+			// Add latitude and longitude for delivery orders only if they exist
+			if (orderMode === 'delivery' && latitude !== null && longitude !== null) {
+				orderData.latitude = latitude;
+				orderData.longitude = longitude;
+			}
+
+			const { error } = await supabase.from('orders').insert([orderData])
 
 			if (error) throw error
 
@@ -86,13 +121,18 @@ export default function CheckoutPage() {
 			setOrderPlaced(true)
 			clearCart()
 		} catch (err) {
-			toast.error('Xatolik yuz berdi, qaytadan urinib koʻring')
+			console.error("Order creation error:", err);
+			// More specific error handling for missing columns
+			if (err instanceof Error && err.message.includes('column')) {
+				toast.error('Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.');
+			} else {
+				toast.error('Xatolik yuz berdi, qaytadan urinib koʻring')
+			}
 		} finally {
 			setIsSubmitting(false)
 		}
 	}
 
-	// ... (Qolgan render qismi o'zgarishsiz qoladi)
 	if (!mounted) return null
 
 	if (orderPlaced)
@@ -188,7 +228,6 @@ export default function CheckoutPage() {
 								</div>
 							</section>
 
-							{/* ... Qolgan qismlar (LocationPicker, Order Summary va h.k.) o'zgarishsiz ... */}
 							<section>
 								<div className='flex items-center gap-3 mb-8'>
 									<div className='p-2 bg-red-600/10 rounded-lg text-red-600'>
@@ -216,7 +255,7 @@ export default function CheckoutPage() {
 
 								{orderMode === 'delivery' ? (
 									<div className='rounded-[24px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-50 dark:bg-[#0F1420]'>
-										<LocationPicker onLocationSelect={setDeliveryAddress} />
+										<LocationPicker onLocationSelect={handleLocationSelect} />
 									</div>
 								) : (
 									<div className='animate-in fade-in slide-in-from-top-4 duration-500'>
@@ -236,7 +275,6 @@ export default function CheckoutPage() {
 						</div>
 					</div>
 
-					{/* Order Summary qismi o'zgarishsiz qoladi */}
 					<div className='lg:col-span-5'>
 						<div className='bg-slate-50 dark:bg-[#0F1420] border border-slate-200 dark:border-slate-800 rounded-[32px] p-8 sticky top-10 shadow-2xl dark:shadow-none'>
 							<div className='flex items-center justify-between mb-10'>

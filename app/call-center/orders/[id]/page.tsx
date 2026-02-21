@@ -1,6 +1,8 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
+import { MapboxMap } from '@/components/mapbox-map'
+import { useAuth } from '@/lib/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -12,6 +14,7 @@ import {
   Circle,
   Clock,
   HelpCircle,
+  Lock,
   MapPin,
   MoreHorizontal,
   Phone,
@@ -89,6 +92,7 @@ const DELIVERY_STEPS = [
 export default function OrderDetailPage() {
   const params = useParams()
   const orderId = params.id as string
+  const { role, loading: authLoading } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -96,6 +100,10 @@ export default function OrderDetailPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const previousStatusRef = useRef<OrderStatus | null>(null)
+
+  // Role-based permissions
+  const canUpdateKitchenStatus = role === 'kitchen'
+  const canUpdateCourierStatus = role === 'kitchen' || role === 'operator'
 
   // Initialize audio
   useEffect(() => {
@@ -172,9 +180,45 @@ export default function OrderDetailPage() {
     }
   }, [orderId, fetchOrder])
 
+  // Check if user can update to specific status
+  const canUpdateToStatus = (status: OrderStatus): boolean => {
+    // Kitchen statuses: qabul_qilindi, tayyorlanmoqda, tayyor
+    const kitchenStatuses: OrderStatus[] = ['qabul_qilindi', 'tayyorlanmoqda', 'tayyor']
+    // Courier statuses: olib_ketildi, yo'lda
+    const courierStatuses: OrderStatus[] = ['olib_ketildi', "yo'lda"]
+
+    if (kitchenStatuses.includes(status)) {
+      return canUpdateKitchenStatus
+    }
+    if (courierStatuses.includes(status)) {
+      return canUpdateCourierStatus
+    }
+    // yetkazildi - only kitchen or operator
+    if (status === 'yetkazildi') {
+      return canUpdateCourierStatus
+    }
+    return false
+  }
+
+  // Handle unauthorized click attempt
+  const handleUnauthorizedClick = (statusType: 'kitchen' | 'courier') => {
+    if (statusType === 'kitchen') {
+      toast.info('Statusni faqat oshxona o\'zgartira oladi')
+    } else {
+      toast.info('Kuryer statuslarini o\'zgartirish cheklangan')
+    }
+  }
+
   // Update status with optimistic UI
   const updateStatus = async (newStatus: OrderStatus) => {
     if (!order || updating) return
+
+    // Check permissions before updating
+    if (!canUpdateToStatus(newStatus)) {
+      const isKitchenStatus = ['qabul_qilindi', 'tayyorlanmoqda', 'tayyor'].includes(newStatus)
+      handleUnauthorizedClick(isKitchenStatus ? 'kitchen' : 'courier')
+      return
+    }
 
     const previousStatus = order.status
     setUpdating(newStatus)
@@ -380,16 +424,31 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              {/* Kitchen Steps */}
+              {/* Kitchen Steps - Role Based */}
               <div className="space-y-3 mb-6">
+                {/* Read-only indicator for non-kitchen users */}
+                {!canUpdateKitchenStatus && (
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-4">
+                    <Lock className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm text-blue-600 dark:text-blue-400">
+                      Faqat oshxona o'zgartira oladi
+                    </span>
+                  </div>
+                )}
+
                 {order.status === 'yangi' ? (
-                  // Show accept button for new orders
+                  // Show accept button for new orders - kitchen only
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => updateStatus('qabul_qilindi')}
-                    disabled={updating === 'qabul_qilindi'}
-                    className="w-full py-3.5 bg-[#FF0000] text-white rounded-xl font-medium hover:bg-[#cc0000] transition-colors shadow-lg shadow-red-500/25 flex items-center justify-center gap-2"
+                    whileHover={canUpdateKitchenStatus ? { scale: 1.02 } : {}}
+                    whileTap={canUpdateKitchenStatus ? { scale: 0.98 } : {}}
+                    onClick={() => canUpdateKitchenStatus ? updateStatus('qabul_qilindi') : handleUnauthorizedClick('kitchen')}
+                    disabled={!canUpdateKitchenStatus || updating === 'qabul_qilindi'}
+                    className={cn(
+                      'w-full py-3.5 rounded-xl font-medium flex items-center justify-center gap-2 transition-all',
+                      canUpdateKitchenStatus
+                        ? 'bg-[#FF0000] text-white hover:bg-[#cc0000] shadow-lg shadow-red-500/25 cursor-pointer'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                    )}
                   >
                     {updating === 'qabul_qilindi' ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -401,31 +460,30 @@ export default function OrderDetailPage() {
                     )}
                   </motion.button>
                 ) : (
-                  // Show steps for accepted orders
+                  // Show steps for accepted orders - read only for non-kitchen
                   KITCHEN_STEPS.map((step, index) => {
                     const isCompleted = index <= kitchenStepIndex
                     const isCurrent = index === kitchenStepIndex
-                    const isClickable = index === kitchenStepIndex + 1 && !isCompleted
+                    const isNextStep = index === kitchenStepIndex + 1 && !isCompleted
+                    const canClick = canUpdateKitchenStatus && isNextStep
 
                     return (
-                      <motion.button
+                      <motion.div
                         key={step.id}
-                        onClick={() => isClickable && updateStatus(step.id)}
-                        disabled={!isClickable || !!updating}
-                        whileHover={isClickable ? { scale: 1.02 } : {}}
-                        whileTap={isClickable ? { scale: 0.98 } : {}}
+                        onClick={() => canClick ? updateStatus(step.id) : !canUpdateKitchenStatus && isNextStep ? handleUnauthorizedClick('kitchen') : undefined}
                         className={cn(
                           'w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left',
-                          isCompleted ? 'bg-orange-50 dark:bg-orange-950/20' : 'bg-gray-50 dark:bg-gray-800/50',
-                          isClickable && 'hover:bg-orange-100 dark:hover:bg-orange-900/30 cursor-pointer',
-                          !isClickable && 'cursor-default'
+                          isCompleted ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-gray-50 dark:bg-gray-800/50',
+                          canClick && 'hover:bg-orange-100 dark:hover:bg-orange-900/30 cursor-pointer',
+                          !canUpdateKitchenStatus && isNextStep && 'cursor-not-allowed opacity-60',
+                          !isCompleted && !isCurrent && 'opacity-50'
                         )}
                       >
                         <div
                           className={cn(
                             'w-6 h-6 rounded-full flex items-center justify-center transition-colors',
                             isCompleted
-                              ? 'bg-orange-500 text-white'
+                              ? 'bg-emerald-500 text-white'
                               : isCurrent
                                 ? 'border-2 border-orange-500'
                                 : 'border-2 border-gray-300 dark:border-gray-600'
@@ -457,20 +515,28 @@ export default function OrderDetailPage() {
                           </span>
                           <span className="text-xs text-gray-400">{step.description}</span>
                         </div>
-                      </motion.button>
+                        {!canUpdateKitchenStatus && isNextStep && (
+                          <Lock className="w-4 h-4 text-gray-400" />
+                        )}
+                      </motion.div>
                     )
                   })
                 )}
               </div>
 
-              {/* Mark as Ready Button */}
+              {/* Mark as Ready Button - Kitchen only */}
               {order.status === 'tayyorlanmoqda' && (
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => updateStatus('tayyor')}
-                  disabled={updating === 'tayyor'}
-                  className="w-full py-3.5 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                  whileHover={canUpdateKitchenStatus ? { scale: 1.02 } : {}}
+                  whileTap={canUpdateKitchenStatus ? { scale: 0.98 } : {}}
+                  onClick={() => canUpdateKitchenStatus ? updateStatus('tayyor') : handleUnauthorizedClick('kitchen')}
+                  disabled={!canUpdateKitchenStatus || updating === 'tayyor'}
+                  className={cn(
+                    'w-full py-3.5 rounded-xl font-medium flex items-center justify-center gap-2 transition-all',
+                    canUpdateKitchenStatus
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                  )}
                 >
                   {updating === 'tayyor' ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -556,33 +622,50 @@ export default function OrderDetailPage() {
                     </motion.button>
                   )}
 
-                  {/* Map Placeholder */}
-                  <div className="relative h-64 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <MapPin className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-                        <p className="text-sm text-blue-600 font-medium">Xarita tez orada</p>
+                  {/* Map Section - Status based visibility */}
+                  {order.status === 'tayyor' && (
+                    <div className="relative h-[350px] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4">
+                          <Clock className="w-8 h-8 text-blue-500" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium">Kuryer hali yo'lga chiqmagan</p>
+                        <p className="text-sm text-gray-400 mt-1">Buyurtma tayyor, kuryer kutilyapti</p>
                       </div>
                     </div>
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 200">
-                      <path
-                        d="M50 150 Q150 50 250 100"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeDasharray="8 4"
-                        className="text-blue-300"
+                  )}
+
+                  {(order.status === "yo'lda" || order.status === 'olib_ketildi') && (
+                    <div className="relative h-[350px] rounded-2xl overflow-hidden shadow-md">
+                      <MapboxMap
+                        lat={order.courier_lat}
+                        lng={order.courier_lng}
+                        zoom={14}
+                        className="w-full h-full"
                       />
-                      <circle cx="50" cy="150" r="6" className="fill-blue-500" />
-                      <circle cx="250" cy="100" r="6" className="fill-red-500" />
-                    </svg>
-                    {order.courier_lat && (
+                      {/* Live indicator */}
                       <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-full px-3 py-1.5 shadow-lg flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jonli</span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {order.status === 'yetkazildi' && (
+                    <div className="relative h-[350px] bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl overflow-hidden flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center p-6">
+                          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                          </div>
+                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-sm px-4 py-1">
+                            Yetkazildi
+                          </Badge>
+                          <p className="text-sm text-gray-500 mt-3">Buyurtma muvaffaqiyatli yetkazildi</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-8 text-gray-500">

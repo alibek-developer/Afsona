@@ -9,19 +9,22 @@ import { useEffect, useState } from 'react'
 import { toast } from '@/lib/toast'
 
 interface LocationPickerProps {
-	onLocationSelect: (address: string, distance: number, tooFar: boolean) => void
+	onLocationSelect: (address: string, distance: number, tooFar: boolean, lat?: number, lng?: number) => void
+}
+
+interface LocationData {
+	dist: number
+	text: string
+	tooFar: boolean
+	lat: number
+	lng: number
+	fullAddress?: string
 }
 
 export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
 	const [isLocating, setIsLocating] = useState(false)
 	const [mounted, setMounted] = useState(false)
-	const [distanceInfo, setDistanceInfo] = useState<{
-		dist: number
-		text: string
-		tooFar: boolean
-		lat: number
-		lng: number
-	} | null>(null)
+	const [distanceInfo, setDistanceInfo] = useState<LocationData | null>(null)
 
 	useEffect(() => {
 		setMounted(true)
@@ -32,107 +35,116 @@ export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
 		setIsLocating(true)
 
 		try {
-			const gpsPosition = await new Promise<GeolocationPosition>(
-				(resolve, reject) => {
-					if (!navigator.geolocation) {
-						reject(new Error("Geolocation qo'llab-quvvatlanmaydi"))
-						return
-					}
-					navigator.geolocation.getCurrentPosition(resolve, reject, {
-						enableHighAccuracy: true,
-						maximumAge: 0,
-					})
+			// Use proper geolocation API with required settings
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					const latitude = position.coords.latitude;
+					const longitude = position.coords.longitude;
+
+					console.log("Latitude:", latitude);
+					console.log("Longitude:", longitude);
+
+					// Reverse geocoding to get address
+					reverseGeocode(latitude, longitude)
+						.then((fullAddress) => {
+							const gpsDist = calculateDistance(latitude, longitude);
+							const tooFar = gpsDist > MAX_DELIVERY_RADIUS_KM;
+							const distanceText =
+								gpsDist < 1
+									? `${(gpsDist * 1000).toFixed(0)} m`
+									: `${gpsDist.toFixed(1)} km`;
+
+							const address = fullAddress || `GPS orqali aniqlangan joylashuv: ${latitude}, ${longitude}`;
+
+							const locationData: LocationData = {
+								dist: gpsDist,
+								text: distanceText,
+								tooFar,
+								lat: latitude,
+								lng: longitude,
+								fullAddress: address
+							};
+
+							setDistanceInfo(locationData);
+							onLocationSelect(address, gpsDist, tooFar, latitude, longitude);
+
+							if (tooFar) {
+								toast.warning(
+									`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
+								);
+							} else {
+								toast.success('Yetkazib berish hududi aniqlandi!');
+							}
+
+							setIsLocating(false);
+						})
+						.catch((error) => {
+							console.log("Reverse geocoding error:", error);
+							// Fallback to basic address if reverse geocoding fails
+							const gpsDist = calculateDistance(latitude, longitude);
+							const tooFar = gpsDist > MAX_DELIVERY_RADIUS_KM;
+							const distanceText =
+								gpsDist < 1
+									? `${(gpsDist * 1000).toFixed(0)} m`
+									: `${gpsDist.toFixed(1)} km`;
+
+							const address = `GPS orqali aniqlangan joylashuv: ${latitude}, ${longitude}`;
+
+							const locationData: LocationData = {
+								dist: gpsDist,
+								text: distanceText,
+								tooFar,
+								lat: latitude,
+								lng: longitude,
+								fullAddress: address
+							};
+
+							setDistanceInfo(locationData);
+							onLocationSelect(address, gpsDist, tooFar, latitude, longitude);
+
+							if (tooFar) {
+								toast.warning(
+									`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
+								);
+							} else {
+								toast.success('Yetkazib berish hududi aniqlandi!');
+							}
+
+							setIsLocating(false);
+						});
 				},
-			)
-
-			const gpsLat = gpsPosition.coords.latitude
-			const gpsLng = gpsPosition.coords.longitude
-			const gpsDist = calculateDistance(gpsLat, gpsLng)
-
-			if (gpsDist > 10) {
-				try {
-					const response = await fetch('http://ip-api.com/json/')
-					const data = await response.json()
-
-					if (data.status === 'success') {
-						const { lat, lon, city } = data
-						const ipDist = calculateDistance(lat, lon)
-
-						const dist = ipDist
-						const tooFar = dist > MAX_DELIVERY_RADIUS_KM
-						const distanceText =
-							dist < 1
-								? `${(dist * 1000).toFixed(0)} m`
-								: `${dist.toFixed(1)} km`
-						const address = `Aniqlangan shahar: ${city} (IP orqali tekshirildi)`
-
-						setDistanceInfo({ dist, text: distanceText, tooFar, lat, lng: lon })
-						onLocationSelect(address, dist, tooFar)
-
-			if (tooFar) {
-				toast.warning(
-					`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-				)
-			} else {
-				toast.success('Yetkazib berish hududi aniqlandi!')
-			}
-					} else {
-						throw new Error('IP aniqlashda xatolik')
-					}
-				} catch (ipError) {
-					const dist = gpsDist
-					const tooFar = dist > MAX_DELIVERY_RADIUS_KM
-					const distanceText =
-						dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`
-					const address = `GPS orqali aniqlangan joylashuv`
-
-					setDistanceInfo({
-						dist,
-						text: distanceText,
-						tooFar,
-						lat: gpsLat,
-						lng: gpsLng,
-					})
-					onLocationSelect(address, dist, tooFar)
-
-					if (tooFar) {
-						toast.warning(
-							`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-						)
-					} else {
-						toast.success('Yetkazib berish hududi aniqlandi!')
-					}
+				(error) => {
+					console.log("Geolocation error:", error);
+					toast.error("Joylashuvni aniqlash uchun ruxsat bering");
+					setIsLocating(false);
+				},
+				{
+					enableHighAccuracy: true,
+					timeout: 10000,
+					maximumAge: 0
 				}
-			} else {
-				const dist = gpsDist
-				const tooFar = dist > MAX_DELIVERY_RADIUS_KM
-				const distanceText =
-					dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`
-				const address = `GPS orqali aniqlangan joylashuv`
-
-				setDistanceInfo({
-					dist,
-					text: distanceText,
-					tooFar,
-					lat: gpsLat,
-					lng: gpsLng,
-				})
-				onLocationSelect(address, dist, tooFar)
-
-				if (tooFar) {
-					toast.warning(
-						`Masofa uzoq (${distanceText}). Yetkazib berish narxi kelishiladi.`,
-					)
-				} else {
-					toast.success('Yetkazib berish hududi aniqlandi!')
-				}
-			}
+			);
 		} catch (error) {
-			toast.error("Joylashuvni aniqlab bo'lmadi. Iltimos, qayta urining.")
-		} finally {
-			setIsLocating(false)
+			console.log("Geolocation error:", error);
+			toast.error("Joylashuvni aniqlash uchun ruxsat bering");
+			setIsLocating(false);
 		}
-	}
+	};
+
+	// Function to perform reverse geocoding
+	const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+		try {
+			// Using OpenStreetMap Nominatim API for reverse geocoding
+			const response = await fetch(
+				`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`
+			);
+			const data = await response.json();
+			return data.display_name || `${lat}, ${lng}`;
+		} catch (error) {
+			console.log("Reverse geocoding failed:", error);
+			return `${lat}, ${lng}`;
+		}
+	};
 
 	const openInGoogleMaps = (lat: number, lng: number) => {
 		window.open(

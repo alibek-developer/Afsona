@@ -57,6 +57,9 @@ interface Order {
   courier_lat?: number
   courier_lng?: number
   notes?: string
+  type?: string
+  latitude?: number
+  longitude?: number
 }
 
 // Status configuration with colors and labels
@@ -120,7 +123,7 @@ export default function OrderDetailPage() {
   // Fetch order
   const fetchOrder = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('orders').select('*').eq('id', orderId).single()
+      const { data, error } = await supabase.from('orders').select('*').eq('id', orderId).eq('source', 'call-center').single()
 
       if (error) throw error
 
@@ -142,6 +145,9 @@ export default function OrderDetailPage() {
           courier_lat: data.courier_lat,
           courier_lng: data.courier_lng,
           notes: data.notes,
+          type: data.type,
+          latitude: data.latitude,
+          longitude: data.longitude,
         }
 
         // Check for status change
@@ -169,8 +175,37 @@ export default function OrderDetailPage() {
 
       const channel = supabase
         .channel(`order-${orderId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, () => {
-          fetchOrder()
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'orders', 
+          filter: `id=eq.${orderId}` 
+        }, (payload) => {
+          // Update local state immediately when order changes
+          if (payload.new.id === orderId) {
+            const updatedOrder: Order = {
+              id: payload.new.id,
+              order_number: payload.new.order_number || payload.new.id.slice(-6),
+              created_at: payload.new.created_at,
+              customer_name: payload.new.customer_name || 'Noma\'lum',
+              phone: payload.new.phone || '-',
+              address: payload.new.address || payload.new.delivery_address || 'Manzil ko\'rsatilmagan',
+              items: payload.new.items || [],
+              total: payload.new.total || payload.new.total_amount || 0,
+              status: payload.new.status || 'yangi',
+              courier_id: payload.new.courier_id,
+              courier_name: payload.new.courier_name,
+              courier_phone: payload.new.courier_phone,
+              courier_avatar: payload.new.courier_avatar,
+              courier_lat: payload.new.courier_lat,
+              courier_lng: payload.new.courier_lng,
+              notes: payload.new.notes,
+              type: payload.new.type,
+              latitude: payload.new.latitude,
+              longitude: payload.new.longitude,
+            }
+            setOrder(updatedOrder)
+          }
         })
         .subscribe()
 
@@ -178,7 +213,7 @@ export default function OrderDetailPage() {
         supabase.removeChannel(channel)
       }
     }
-  }, [orderId, fetchOrder])
+  }, [orderId])
 
   // Check if user can update to specific status
   const canUpdateToStatus = (status: OrderStatus): boolean => {
@@ -223,7 +258,7 @@ export default function OrderDetailPage() {
     const previousStatus = order.status
     setUpdating(newStatus)
 
-    // Optimistic update
+    // Optimistic update - update local state first
     setOrder({ ...order, status: newStatus })
 
     try {
@@ -236,6 +271,7 @@ export default function OrderDetailPage() {
         updateData.courier_phone = '+998 90 123 45 67'
       }
 
+      // Update Supabase after local state update
       const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
 
       if (error) throw error
@@ -243,7 +279,6 @@ export default function OrderDetailPage() {
       const successStatusConfig = getStatusConfig(newStatus)
       toast.success(`Status yangilandi: ${successStatusConfig.label}`)
     } catch (error) {
-      console.error('Error updating status:', error)
       // Rollback on error
       setOrder({ ...order, status: previousStatus })
       toast.error('Statusni yangilashda xatolik')
@@ -292,6 +327,10 @@ export default function OrderDetailPage() {
       </div>
     )
   }
+
+  // Determine if map should be shown based on type and status
+  const showMap = order.type === 'delivery' && 
+                 (order.status === 'yo\'lda' || order.status === 'olib_ketildi' || order.status === 'yetkazildi');
 
   return (
     <div className="min-h-screen bg-[#f5f7fa] dark:bg-[#0a0a0a]">
@@ -343,7 +382,7 @@ export default function OrderDetailPage() {
                 3
               </div>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.000 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
 
@@ -635,19 +674,45 @@ export default function OrderDetailPage() {
                     </div>
                   )}
 
-                  {(order.status === "yo'lda" || order.status === 'olib_ketildi') && (
+                  {showMap && (
                     <div className="relative h-[350px] rounded-2xl overflow-hidden shadow-md">
+                      {/* Floating status badge */}
+                      {order.status === 'yo\'lda' && (
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-red-500/10 text-red-500 px-4 py-2 rounded-full font-semibold text-sm">
+                          🚚 Kuryer yo'lda
+                        </div>
+                      )}
+                      
+                      {order.status === 'yetkazildi' && (
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-gray-500/20 text-gray-600 dark:text-gray-300 px-4 py-2 rounded-full font-semibold text-sm">
+                          ✅ Yetkazildi
+                        </div>
+                      )}
+
                       <MapboxMap
                         lat={order.courier_lat}
                         lng={order.courier_lng}
                         zoom={14}
                         className="w-full h-full"
+                        deliveryAddress={{
+                          lat: order.latitude,
+                          lng: order.longitude,
+                          type: order.type
+                        }}
+                        courierLocation={{
+                          lat: order.courier_lat,
+                          lng: order.courier_lng
+                        }}
+                        status={order.status}
                       />
+
                       {/* Live indicator */}
-                      <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-full px-3 py-1.5 shadow-lg flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jonli</span>
-                      </div>
+                      {(order.status === "yo'lda" || order.status === 'olib_ketildi') && (
+                        <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-full px-3 py-1.5 shadow-lg flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Jonli</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -673,6 +738,28 @@ export default function OrderDetailPage() {
                   <p>Buyurtma tayyor bo'lganda kuryer biriktiriladi</p>
                 </div>
               )}
+              
+              {/* Small info panel under map */}
+              <div className="mt-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Mijoz:</span>
+                    <p className="font-medium">{order.customer_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Telefon:</span>
+                    <p className="font-medium">{order.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Summa:</span>
+                    <p className="font-medium">{order.total.toLocaleString()} so'm</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>
+                    <p className="font-medium">{statusConfig.label}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

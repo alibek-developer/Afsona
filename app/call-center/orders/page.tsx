@@ -155,8 +155,10 @@ export default function OrdersPage() {
     // Real-time subscription
     const channel = supabase
       .channel('call-center-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        fetchOrders()
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload: { new: any }) => {
+        if (payload.new?.source === 'call-center') {
+          fetchOrders();
+        }
       })
       .subscribe()
 
@@ -170,6 +172,7 @@ export default function OrdersPage() {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
+        .eq('source', 'call-center')
         .order('created_at', { ascending: false })
 
       if (error) throw error

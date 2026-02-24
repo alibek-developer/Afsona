@@ -1,9 +1,9 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { divIcon } from 'leaflet';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,8 @@ L.Icon.Default.mergeOptions({
 interface InteractiveMapProps {
   latitude: number | null;
   longitude: number | null;
-  onLocationSelect: (lat: number, lng: number) => void;
+  mapCenter?: [number, number];
+  onLocationSelect: (lat: number, lng: number, address?: string) => void;
   height?: string;
   onSearch?: (query: string) => void;
   searchQuery?: string;
@@ -29,11 +30,42 @@ interface InteractiveMapProps {
   isSearching?: boolean;
 }
 
-// Component to handle map clicks
-function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click: (e) => {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
+// Component to update map view when coordinates change
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  
+  // Update map view when center changes
+  map.setView(center, 17);
+  
+  return null;
+}
+
+// Component to handle map clicks with reverse geocoding
+function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number, address?: string) => void }) {
+  const map = useMapEvents({
+    click: async (e) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      
+      // Reverse geocoding to get address
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.display_name) {
+            onLocationSelect(lat, lng, data.display_name);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Reverse geocoding error:', error);
+      }
+      
+      // Fallback - call without address
+      onLocationSelect(lat, lng);
     },
   });
   return null;
@@ -42,6 +74,7 @@ function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number
 export function InteractiveMap({ 
   latitude, 
   longitude, 
+  mapCenter,
   onLocationSelect,
   height = "500px",
   onSearch,
@@ -51,9 +84,16 @@ export function InteractiveMap({
 }: InteractiveMapProps) {
   const [center, setCenter] = useState<[number, number]>([41.2995, 69.2401]); // Default to Uzbekistan center
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  // Update local center when mapCenter prop changes
+  useEffect(() => {
+    if (mapCenter) {
+      setCenter(mapCenter);
+    }
+  }, [mapCenter]);
+
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
     setCenter([lat, lng]);
-    onLocationSelect(lat, lng);
+    onLocationSelect(lat, lng, address);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -104,6 +144,7 @@ export function InteractiveMap({
           zoomControl={true}
           attributionControl={false}
         >
+          <MapUpdater center={center} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

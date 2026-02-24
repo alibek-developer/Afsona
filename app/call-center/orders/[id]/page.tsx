@@ -35,6 +35,7 @@ const ORDER_STATUSES = [
   'tayyorlanmoqda',
   'tayyor',
   'olib_ketildi',
+  'on_the_way',
   "yo'lda",
   'yetkazildi',
 ] as const
@@ -55,8 +56,8 @@ interface Order {
   courier_name?: string
   courier_phone?: string
   courier_avatar?: string
-  courier_lat?: number
-  courier_lng?: number
+  courier_latitude?: number
+  courier_longitude?: number
   notes?: string
   type?: string
   latitude?: number
@@ -71,6 +72,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: str
   tayyorlanmoqda: { label: 'Tayyorlanmoqda', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
   tayyor: { label: 'Tayyor', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200' },
   olib_ketildi: { label: 'Olib ketildi', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+  on_the_way: { label: 'Yo\'lda', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
   "yo'lda": { label: "Yo'lda", color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
   yetkazildi: { label: 'Yetkazildi', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
 }
@@ -144,8 +146,8 @@ export default function OrderDetailPage() {
           courier_name: data.courier_name,
           courier_phone: data.courier_phone,
           courier_avatar: data.courier_avatar,
-          courier_lat: data.courier_lat,
-          courier_lng: data.courier_lng,
+          courier_latitude: data.courier_latitude,
+          courier_longitude: data.courier_longitude,
           notes: data.notes,
           type: data.type,
           latitude: data.latitude,
@@ -200,8 +202,8 @@ export default function OrderDetailPage() {
               courier_name: payload.new.courier_name,
               courier_phone: payload.new.courier_phone,
               courier_avatar: payload.new.courier_avatar,
-              courier_lat: payload.new.courier_lat,
-              courier_lng: payload.new.courier_lng,
+              courier_latitude: payload.new.courier_latitude,
+              courier_longitude: payload.new.courier_longitude,
               notes: payload.new.notes,
               type: payload.new.type,
               latitude: payload.new.latitude,
@@ -217,7 +219,7 @@ export default function OrderDetailPage() {
         supabase.removeChannel(channel)
       }
     }
-  }, [orderId])
+  }, [orderId, fetchOrder])
 
   // Check if user can update to specific status
   const canUpdateToStatus = (status: OrderStatus): boolean => {
@@ -334,7 +336,7 @@ export default function OrderDetailPage() {
 
   // Determine if map should be shown based on type and status
   const showMap = order.type === 'delivery' && 
-                 (order.status === 'yo\'lda' || order.status === 'olib_ketildi' || order.status === 'yetkazildi');
+                 (order.status === 'on_the_way' || order.status === 'olib_ketildi' || order.status === 'yetkazildi');
 
   return (
     <div className="min-h-screen bg-[#f5f7fa] dark:bg-[#0a0a0a]">
@@ -694,8 +696,8 @@ export default function OrderDetailPage() {
                       )}
 
                       <MapboxMap
-                        lat={order.courier_lat}
-                        lng={order.courier_lng}
+                        lat={order.courier_latitude}
+                        lng={order.courier_longitude}
                         zoom={14}
                         className="w-full h-full"
                         deliveryAddress={{
@@ -704,8 +706,8 @@ export default function OrderDetailPage() {
                           type: order.type
                         }}
                         courierLocation={{
-                          lat: order.courier_lat,
-                          lng: order.courier_lng
+                          lat: order.courier_latitude,
+                          lng: order.courier_longitude
                         }}
                         status={order.status}
                       />

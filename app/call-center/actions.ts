@@ -48,27 +48,73 @@ const SERVICE_FEE_PERCENT = 0.10
  */
 export async function submitOrder(orderData: OrderData) {
 	try {
-		const { data, error } = await supabaseAdmin.from('orders').insert([
-			{
+		// Validate required fields
+		if (!orderData.customer_name || !orderData.phone || !orderData.type || typeof orderData.total_amount === 'undefined' || orderData.total_amount === null) {
+			console.error("❌ INSERT FAILED – Missing required fields:", {
 				customer_name: orderData.customer_name,
 				phone: orderData.phone,
-				delivery_address: orderData.delivery_address,
 				type: orderData.type,
-				items: orderData.items,
 				total_amount: orderData.total_amount,
-				status: orderData.status || 'yangi',
-				source: 'call-center',
-				...(orderData.latitude !== undefined && { latitude: orderData.latitude }),
-				...(orderData.longitude !== undefined && { longitude: orderData.longitude }),
-				...(orderData.landmark && { landmark: orderData.landmark }),
-			},
-		])
+			});
+			
+			return { 
+				success: false, 
+				message: "Missing required fields: customer_name, phone, type, or total_amount" 
+			};
+		}
 
-		if (error) throw error
+		// Always use the passed delivery_address (which contains the current text value)
+		// Never fallback to stored value or other fields
+		const deliveryAddress = orderData.delivery_address || '';
+
+		// Prepare order payload
+		const orderPayload = {
+			customer_name: orderData.customer_name,
+			phone: orderData.phone,
+			delivery_address: deliveryAddress,
+			type: orderData.type,
+			items: orderData.items,
+			total_amount: orderData.total_amount,
+			status: orderData.status || 'yangi',
+			source: 'call-center',
+			...(orderData.latitude !== undefined && { latitude: orderData.latitude }),
+			...(orderData.longitude !== undefined && { longitude: orderData.longitude }),
+			...(orderData.landmark && { landmark: orderData.landmark }),
+		};
+
+		console.log("📦 ORDER PAYLOAD:", orderPayload);
+
+		const { data, error } = await supabaseAdmin
+			.from('orders')
+			.insert([orderPayload])
+			.select();
+
+		if (error) {
+			console.error("❌ SUPABASE INSERT ERROR FULL:", {
+				message: error.message,
+				details: error.details,
+				hint: error.hint,
+				code: error.code,
+			});
+
+			return { 
+				success: false, 
+				message: "Database error: " + error.message 
+			};
+		}
+
+		if (!data || data.length === 0) {
+			console.error("❌ INSERT FAILED – NO DATA RETURNED");
+			return { 
+				success: false, 
+				message: "Insert failed unexpectedly" 
+			};
+		}
+
 		return { success: true, data }
 	} catch (error: any) {
-		console.error('Order submission error:', error.message)
-		return { success: false, message: error.message }
+		console.error("❌ UNEXPECTED ERROR:", error);
+		return { success: false, message: error.message || "Unexpected error occurred" }
 	}
 }
 

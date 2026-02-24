@@ -1,4 +1,4 @@
-@import url('https://api.fontshare.com/v2/css?f[]=clash-display@600,700,800,900&f[]=plus-jakarta-sans@400,500,600,700,800&display=swap');
+/* Font preload warning uchun o'chirildi - Next.js o'zi boshqaradi */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 

@@ -110,8 +110,8 @@ export default function MenuPage() {
         total_amount: totalSum,
         status: 'yangi',
         ...(mode === 'delivery' && {
-          latitude,
-          longitude,
+          latitude: latitude || undefined,
+          longitude: longitude || undefined,
           landmark,
         }),
       })

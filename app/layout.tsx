@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 	icons: { icon: '/logo.jpg', apple: '/logo.jpg' },
 }
 
+// Fontlarni preload qilish - Next.js tomonidan boshqariladi
+
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {

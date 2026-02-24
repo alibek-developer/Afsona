@@ -75,6 +75,7 @@ export function MenuOrderSidebar({
 }: MenuOrderSidebarProps) {
   const [mapSearchQuery, setMapSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([41.2995, 69.2401]); // Default to Uzbekistan center
 
   const handleMapSearch = async (query: string) => {
     if (!query.trim()) return;
@@ -95,8 +96,11 @@ export function MenuOrderSidebar({
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
         
+        // Set coordinates
         setLatitude(lat);
         setLongitude(lng);
+        // Update map center
+        setMapCenter([lat, lng]);
         
         // Auto-fill address field with found location
         if (result.display_name) {
@@ -215,9 +219,14 @@ export function MenuOrderSidebar({
                   <InteractiveMap
                     latitude={latitude}
                     longitude={longitude}
-                    onLocationSelect={(lat, lng) => {
+                    mapCenter={mapCenter}
+                    onLocationSelect={(lat, lng, address) => {
                       setLatitude(lat);
                       setLongitude(lng);
+                      // Yangi addressni o'zgartirish
+                      if (address) {
+                        setAddress(address);
+                      }
                     }}
                     onSearch={handleMapSearch}
                     searchQuery={mapSearchQuery}

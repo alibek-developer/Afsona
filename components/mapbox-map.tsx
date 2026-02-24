@@ -74,8 +74,8 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
         deliveryMarkerRef.current = deliveryMarker
       }
 
-      // Add courier marker if courier location exists and status is on_the_way
-      if (courierLocation?.lat && courierLocation?.lng && status === 'yo\'lda') {
+      // Add courier marker if courier location exists and status is on_the_way or yo'lda
+      if (courierLocation?.lat && courierLocation?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
         const courierMarkerEl = document.createElement('div')
         courierMarkerEl.style.width = '32px'
         courierMarkerEl.style.height = '32px'
@@ -92,7 +92,7 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
       }
 
       // Draw polyline if both courier and delivery locations exist
-      if (courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && status === 'yo\'lda') {
+      if (courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
         const routeSource: GeoJSON.FeatureCollection = {
           type: 'FeatureCollection',
           features: [{
@@ -179,7 +179,7 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
     }
 
     // Update courier marker
-    if (courierLocation?.lat && courierLocation?.lng && status === 'yo\'lda') {
+    if (courierLocation?.lat && courierLocation?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
       if (courierMarkerRef.current) {
         // Animate courier marker movement smoothly
         const currentPos = courierMarkerRef.current.getLngLat()
@@ -228,7 +228,7 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
     }
 
     // Update polyline
-    if (map.getSource('route') && courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && status === 'yo\'lda') {
+    if (map.getSource('route') && courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
       const routeSource: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
         features: [{
@@ -245,14 +245,14 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
       };
 
       (map.getSource('route') as mapboxgl.GeoJSONSource).setData(routeSource);
-    } else if (map.getSource('route') && (status !== 'yo\'lda' || !courierLocation?.lat || !deliveryAddress?.lat)) {
+    } else if (map.getSource('route') && (status !== 'on_the_way' && status !== 'yo\'lda' || !courierLocation?.lat || !deliveryAddress?.lat)) {
       // Remove polyline if not in 'yo'lda status or locations are missing
       map.removeLayer('route');
       map.removeSource('route');
     }
 
     // Fit map to both markers when courier appears
-    if (courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && status === 'yo\'lda') {
+    if (courierLocation?.lat && courierLocation?.lng && deliveryAddress?.lat && deliveryAddress?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
       const bounds = new mapboxgl.LngLatBounds()
         .extend([deliveryAddress.lng, deliveryAddress.lat])
         .extend([courierLocation.lng, courierLocation.lat])
@@ -263,7 +263,7 @@ export function MapboxMap({ lat, lng, zoom = 13, className, deliveryAddress, cou
         maxZoom: 15,
         duration: 1000
       })
-    } else if (courierLocation?.lat && courierLocation?.lng && status === 'yo\'lda') {
+    } else if (courierLocation?.lat && courierLocation?.lng && (status === 'on_the_way' || status === 'yo\'lda')) {
       // Center on courier if delivery coordinates are null
       map.flyTo({
         center: [courierLocation.lng, courierLocation.lat],

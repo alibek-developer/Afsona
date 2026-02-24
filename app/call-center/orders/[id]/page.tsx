@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
+
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight,
@@ -60,6 +61,7 @@ interface Order {
   type?: string
   latitude?: number
   longitude?: number
+  landmark?: string
 }
 
 // Status configuration with colors and labels
@@ -148,6 +150,7 @@ export default function OrderDetailPage() {
           type: data.type,
           latitude: data.latitude,
           longitude: data.longitude,
+          landmark: data.landmark,
         }
 
         // Check for status change
@@ -203,6 +206,7 @@ export default function OrderDetailPage() {
               type: payload.new.type,
               latitude: payload.new.latitude,
               longitude: payload.new.longitude,
+              landmark: payload.new.landmark,
             }
             setOrder(updatedOrder)
           }

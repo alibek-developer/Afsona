@@ -16,6 +16,8 @@ import {
   Minus,
   Plus,
 } from 'lucide-react'
+import { InteractiveMap } from '@/components/InteractiveMap'
+import { useState } from 'react'
 
 interface CartItem {
   item: MenuItem
@@ -31,6 +33,12 @@ interface MenuOrderSidebarProps {
   setMode: (mode: 'delivery' | 'dine-in') => void
   address: string
   setAddress: (value: string) => void
+  landmark: string
+  setLandmark: (value: string) => void
+  latitude: number | null
+  setLatitude: (value: number | null) => void
+  longitude: number | null
+  setLongitude: (value: number | null) => void
   tableNumber: string
   setTableNumber: (value: string) => void
   cart: CartItem[]
@@ -50,6 +58,12 @@ export function MenuOrderSidebar({
   setMode,
   address,
   setAddress,
+  landmark,         // Qo'shildi
+  setLandmark,      // Qo'shildi
+  latitude,         // Qo'shildi
+  setLatitude,      // Qo'shildi
+  longitude,        // Qo'shildi
+  setLongitude,     // Qo'shildi
   tableNumber,
   setTableNumber,
   cart,
@@ -59,6 +73,44 @@ export function MenuOrderSidebar({
   onSubmit,
   isSubmitting,
 }: MenuOrderSidebarProps) {
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleMapSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      // Using OpenStreetMap Nominatim for geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Uzbekistan')}&countrycodes=UZ&limit=1`
+      );
+      
+      if (!response.ok) throw new Error('Qidiruvda xatolik yuz berdi');
+      
+      const results = await response.json();
+      
+      if (results && results.length > 0) {
+        const result = results[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        
+        setLatitude(lat);
+        setLongitude(lng);
+        
+        // Auto-fill address field with found location
+        if (result.display_name) {
+          setAddress(result.display_name);
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      // Silently fail - user can still click on map
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     const cleaned = value.replace(/[^\d+]/g, '')
@@ -69,7 +121,7 @@ export function MenuOrderSidebar({
   }
 
   return (
-    <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-[#111827] sticky top-28 overflow-hidden">
+    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-[#111827] sticky top-28 overflow-hidden">
       <CardHeader className="p-8 pb-4">
         <CardTitle className="text-xl font-black flex items-center justify-between">
           YANGI BUYURTMA
@@ -137,12 +189,44 @@ export function MenuOrderSidebar({
             {mode === 'delivery' ? 'Manzil' : 'Stol raqami'}
           </Label>
           {mode === 'delivery' ? (
-            <Textarea
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Manzilni batafsil yozing..."
-              className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold min-h-[80px] text-slate-800 dark:text-slate-200"
-            />
+            <>
+              <Textarea
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Manzilni batafsil yozing..."
+                className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold min-h-[80px] text-slate-800 dark:text-slate-200"
+              />
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+                  Mo'ljal
+                </Label>
+                <Input
+                  value={landmark}
+                  onChange={(e) => setLandmark(e.target.value)}
+                  placeholder="Mo'ljalni kiriting (majburiy)"
+                  className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-800 border-none font-bold text-slate-800 dark:text-slate-200"
+                />
+              </div>
+              <div className="space-y-2 h-[600px]">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+                  Xarita
+                </Label>
+                <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 h-full">
+                  <InteractiveMap
+                    latitude={latitude}
+                    longitude={longitude}
+                    onLocationSelect={(lat, lng) => {
+                      setLatitude(lat);
+                      setLongitude(lng);
+                    }}
+                    onSearch={handleMapSearch}
+                    searchQuery={mapSearchQuery}
+                    onSearchQueryChange={setMapSearchQuery}
+                    isSearching={isSearching}
+                  />
+                </div>
+              </div>
+            </>
           ) : (
             <Input
               value={tableNumber}
@@ -152,6 +236,49 @@ export function MenuOrderSidebar({
             />
           )}
         </div>
+
+        {/* Order Summary for Delivery */}
+        {mode === 'delivery' && (customerName || phone || address || landmark || (latitude !== null && longitude !== null)) && (
+          <div className="pt-6 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
+            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">
+              Buyurtma ma'lumotlari
+            </h4>
+            <div className="space-y-2 text-sm">
+              {customerName && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mijoz:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{customerName}</span>
+                </div>
+              )}
+              {phone && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Telefon:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{phone}</span>
+                </div>
+              )}
+              {address && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Manzil:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[60%]">{address}</span>
+                </div>
+              )}
+              {landmark && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mo'ljal:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[60%]">{landmark}</span>
+                </div>
+              )}
+              {latitude !== null && longitude !== null && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Koordinatalar:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Cart */}
         <div className="pt-6 border-t dark:border-slate-800">

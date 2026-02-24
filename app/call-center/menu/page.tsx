@@ -24,6 +24,9 @@ export default function MenuPage() {
   const [phone, setPhone] = useState('')
   const [mode, setMode] = useState<'delivery' | 'dine-in'>('delivery')
   const [address, setAddress] = useState('')
+  const [landmark, setLandmark] = useState('')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
   const [tableNumber, setTableNumber] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -85,6 +88,11 @@ export default function MenuPage() {
     if (mode === 'delivery' && !address) return toast.error('Manzilni kiriting')
     if (mode === 'dine-in' && !tableNumber)
       return toast.error('Stol raqamini kiriting')
+    
+    // Validation for delivery orders
+    if (mode === 'delivery' && (!latitude || !longitude || !landmark)) {
+      return toast.error("Xaritadan manzilni belgilang va mo'ljal kiriting")
+    }
 
     setIsSubmitting(true)
     try {
@@ -101,6 +109,11 @@ export default function MenuPage() {
         })),
         total_amount: totalSum,
         status: 'yangi',
+        ...(mode === 'delivery' && {
+          latitude,
+          longitude,
+          landmark,
+        }),
       })
 
       if (result.success) {
@@ -109,7 +122,11 @@ export default function MenuPage() {
         setCustomerName('')
         setPhone('')
         setAddress('')
+        setLandmark('')
+        setLatitude(null)
+        setLongitude(null)
         setTableNumber('')
+        // Reset map search state in the sidebar component
       } else {
         throw new Error(result.message)
       }
@@ -192,6 +209,12 @@ export default function MenuPage() {
             setMode={setMode}
             address={address}
             setAddress={setAddress}
+            landmark={landmark}
+            setLandmark={setLandmark}
+            latitude={latitude}
+            setLatitude={setLatitude}
+            longitude={longitude}
+            setLongitude={setLongitude}
             tableNumber={tableNumber}
             setTableNumber={setTableNumber}
             cart={cart}

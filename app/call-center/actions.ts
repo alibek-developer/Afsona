@@ -22,6 +22,9 @@ interface OrderData {
 	items: OrderItem[]
 	total_amount: number
 	status: string
+	latitude?: number
+	longitude?: number
+	landmark?: string
 }
 
 interface ReservationData {
@@ -55,6 +58,9 @@ export async function submitOrder(orderData: OrderData) {
 				total_amount: orderData.total_amount,
 				status: orderData.status || 'yangi',
 				source: 'call-center',
+				...(orderData.latitude !== undefined && { latitude: orderData.latitude }),
+				...(orderData.longitude !== undefined && { longitude: orderData.longitude }),
+				...(orderData.landmark && { landmark: orderData.landmark }),
 			},
 		])
 

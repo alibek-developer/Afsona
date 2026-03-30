@@ -56,7 +56,7 @@ export default function CheckoutPage() {
 		distance: number,
 		tooFar: boolean,
 		lat?: number,
-		lng?: number
+		lng?: number,
 	) => {
 		setDeliveryAddress(address)
 		if (lat !== undefined && lng !== undefined) {
@@ -79,7 +79,9 @@ export default function CheckoutPage() {
 		}
 		if (orderMode === 'delivery') {
 			if (latitude === null || longitude === null) {
-				toast.error('Yetkazib berish manzilini aniqlash uchun joylashuvni aniqlang')
+				toast.error(
+					'Yetkazib berish manzilini aniqlash uchun joylashuvni aniqlang',
+				)
 				return false
 			}
 		}
@@ -89,7 +91,8 @@ export default function CheckoutPage() {
 	const buildOrderData = () => ({
 		customer_name: customerName.trim(),
 		phone: customerPhone.trim(),
-		delivery_address: orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
+		delivery_address:
+			orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
 		type: orderMode,
 		status: 'yangi',
 		items,
@@ -120,9 +123,12 @@ export default function CheckoutPage() {
 			const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
 			const returnUrl = `${siteUrl}/payment-success?order_id=${data.id}`
 
-			const functionUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
+			const functionUrl =
+				process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
 			if (!functionUrl) {
-				toast.error("To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.")
+				toast.error(
+					"To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.",
+				)
 				return
 			}
 
@@ -147,10 +153,14 @@ export default function CheckoutPage() {
 		} catch (err) {
 			console.error('Click payment error:', err)
 			if (err instanceof Error && err.message.includes('column')) {
-				toast.error('Buyurtma yaratishda xatolik. Administratorga murojaat qiling.')
+				toast.error(
+					'Buyurtma yaratishda xatolik. Administratorga murojaat qiling.',
+				)
 			} else {
 				toast.error(
-					err instanceof Error ? err.message : 'Xatolik yuz berdi, qaytadan urinib koʻring'
+					err instanceof Error
+						? err.message
+						: 'Xatolik yuz berdi, qaytadan urinib koʻring',
 				)
 			}
 		} finally {
@@ -174,7 +184,9 @@ export default function CheckoutPage() {
 		} catch (err) {
 			console.error('Order creation error:', err)
 			if (err instanceof Error && err.message.includes('column')) {
-				toast.error('Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.')
+				toast.error(
+					'Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.',
+				)
 			} else {
 				toast.error('Xatolik yuz berdi, qaytadan urinib koʻring')
 			}
@@ -214,7 +226,10 @@ export default function CheckoutPage() {
 							href='/menu'
 							className='w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-red-500 transition-all shadow-sm'
 						>
-							<ArrowLeft size={22} className='text-slate-600 dark:text-slate-300' />
+							<ArrowLeft
+								size={22}
+								className='text-slate-600 dark:text-slate-300'
+							/>
 						</Link>
 						<div>
 							<h1 className='text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white leading-none'>
@@ -333,10 +348,15 @@ export default function CheckoutPage() {
 
 							<div className='space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar'>
 								{items.map(item => (
-									<div key={item.id} className='flex justify-between items-center group'>
+									<div
+										key={item.id}
+										className='flex justify-between items-center group'
+									>
 										<div className='flex items-center gap-4'>
 											<div className='w-14 h-14 bg-white dark:bg-[#080B12] rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-800'>
-												<span className='font-black text-red-600 text-sm'>x{item.quantity}</span>
+												<span className='font-black text-red-600 text-sm'>
+													x{item.quantity}
+												</span>
 											</div>
 											<div>
 												<p className='text-sm font-black text-slate-800 dark:text-white uppercase leading-tight'>
@@ -377,20 +397,8 @@ export default function CheckoutPage() {
 											<Loader2 className='animate-spin' />
 										) : (
 											<>
-												To&apos;lovga o&apos;tish <Check size={20} strokeWidth={3} />
-											</>
-										)}
-									</button>
-									<button
-										onClick={handlePlaceOrder}
-										disabled={isSubmitting || items.length === 0}
-										className='w-full h-14 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-red-600/30 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
-									>
-										{isSubmitting ? (
-											<Loader2 className='animate-spin' />
-										) : (
-											<>
-												Tasdiqlash <Check size={20} strokeWidth={3} />
+												To&apos;lovga o&apos;tish{' '}
+												<Check size={20} strokeWidth={3} />
 											</>
 										)}
 									</button>

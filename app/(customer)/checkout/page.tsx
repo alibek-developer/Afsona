@@ -28,13 +28,12 @@ export default function CheckoutPage() {
 
 	const [orderMode, setOrderMode] = useState<OrderMode>('delivery')
 	const [customerName, setCustomerName] = useState('')
-	const [customerPhone, setCustomerPhone] = useState('+998') // +998 yozilib turishi uchun
+	const [customerPhone, setCustomerPhone] = useState('+998')
 	const [tableNumber, setTableNumber] = useState('')
 	const [deliveryAddress, setDeliveryAddress] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [orderPlaced, setOrderPlaced] = useState(false)
 	const [subtotal, setSubtotal] = useState(0)
-	// New state variables for geolocation
 	const [latitude, setLatitude] = useState<number | null>(null)
 	const [longitude, setLongitude] = useState<number | null>(null)
 
@@ -43,76 +42,128 @@ export default function CheckoutPage() {
 	}, [items, mounted, getTotal])
 
 	const handlePhoneChange = (val: string) => {
-		// Prefixni saqlab qolish
 		if (!val.startsWith('+998')) {
 			setCustomerPhone('+998')
 			return
 		}
-		// Uzunlikni 13 ta belgi bilan cheklash (+998 + 9 ta raqam)
 		if (val.length <= 13 && /^\+998[0-9]*$/.test(val)) {
 			setCustomerPhone(val)
 		}
 	}
 
-	// Updated onLocationSelect callback to handle coordinates
-	const handleLocationSelect = (address: string, distance: number, tooFar: boolean, lat?: number, lng?: number) => {
-		setDeliveryAddress(address);
-		
+	const handleLocationSelect = (
+		address: string,
+		distance: number,
+		tooFar: boolean,
+		lat?: number,
+		lng?: number
+	) => {
+		setDeliveryAddress(address)
 		if (lat !== undefined && lng !== undefined) {
-			setLatitude(lat);
-			setLongitude(lng);
-			console.log("Latitude:", lat);
-			console.log("Longitude:", lng);
+			setLatitude(lat)
+			setLongitude(lng)
 		} else {
-			// If coordinates are not provided, clear them
-			setLatitude(null);
-			setLongitude(null);
+			setLatitude(null)
+			setLongitude(null)
 		}
-	};
+	}
 
-	const handlePlaceOrder = async () => {
-		if (isSubmitting) return
-
-		// Validate required fields
+	const validateFields = () => {
 		if (!customerName.trim() || customerPhone.trim().length !== 13) {
 			toast.error("Iltimos, ismingizni va telefon raqamingizni to'liq kiriting")
-			return
+			return false
 		}
-
 		if (orderMode === 'dine-in' && !tableNumber) {
 			toast.error('Stol raqamini kiriting')
-			return
+			return false
 		}
-
-		// Validate geolocation for delivery orders
 		if (orderMode === 'delivery') {
 			if (latitude === null || longitude === null) {
-				toast.error("Yetkazib berish manzilini aniqlash uchun joylashuvni aniqlang");
-				return;
+				toast.error('Yetkazib berish manzilini aniqlash uchun joylashuvni aniqlang')
+				return false
 			}
 		}
+		return true
+	}
+
+	const buildOrderData = () => ({
+		customer_name: customerName.trim(),
+		phone: customerPhone.trim(),
+		delivery_address: orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
+		type: orderMode,
+		status: 'yangi',
+		items,
+		total_amount: subtotal,
+		source: 'website',
+		...(orderMode === 'delivery' && latitude !== null && longitude !== null
+			? { latitude, longitude }
+			: {}),
+	})
+
+	const handlePayWithClick = async () => {
+		if (isSubmitting || !validateFields()) return
 
 		setIsSubmitting(true)
 		try {
-			// Prepare order data
-			const orderData: any = {
-				customer_name: customerName.trim(),
-				phone: customerPhone.trim(),
-				delivery_address:
-					orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
-				type: orderMode,
-				status: 'yangi',
-				items,
-				total_amount: subtotal,
-				source: 'website'
-			};
+			const orderData: Record<string, unknown> = buildOrderData()
+			orderData.payment_method = 'click'
 
-			// Add latitude and longitude for delivery orders only if they exist
-			if (orderMode === 'delivery' && latitude !== null && longitude !== null) {
-				orderData.latitude = latitude;
-				orderData.longitude = longitude;
+			const { data, error } = await supabase
+				.from('orders')
+				.insert([orderData])
+				.select('id')
+				.single()
+
+			if (error) throw error
+			if (!data?.id) throw new Error('Order ID not returned')
+
+			const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+			const returnUrl = `${siteUrl}/payment-success?order_id=${data.id}`
+
+			const functionUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
+			if (!functionUrl) {
+				toast.error("To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.")
+				return
 			}
 
+			const response = await fetch(functionUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					order_id: data.id,
+					amount: subtotal,
+					return_url: returnUrl,
+				}),
+			})
+
+			const result = await response.json()
+
+			if (!response.ok || !result.success || !result.payment_url) {
+				throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
+			}
+
+			clearCart()
+			window.location.href = result.payment_url
+		} catch (err) {
+			console.error('Click payment error:', err)
+			if (err instanceof Error && err.message.includes('column')) {
+				toast.error('Buyurtma yaratishda xatolik. Administratorga murojaat qiling.')
+			} else {
+				toast.error(
+					err instanceof Error ? err.message : 'Xatolik yuz berdi, qaytadan urinib koʻring'
+				)
+			}
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
+	const handlePlaceOrder = async () => {
+		if (isSubmitting || !validateFields()) return
+
+		setIsSubmitting(true)
+		try {
+			const orderData = buildOrderData()
 			const { error } = await supabase.from('orders').insert([orderData])
 
 			if (error) throw error
@@ -121,10 +172,9 @@ export default function CheckoutPage() {
 			setOrderPlaced(true)
 			clearCart()
 		} catch (err) {
-			console.error("Order creation error:", err);
-			// More specific error handling for missing columns
+			console.error('Order creation error:', err)
 			if (err instanceof Error && err.message.includes('column')) {
-				toast.error('Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.');
+				toast.error('Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.')
 			} else {
 				toast.error('Xatolik yuz berdi, qaytadan urinib koʻring')
 			}
@@ -164,10 +214,7 @@ export default function CheckoutPage() {
 							href='/menu'
 							className='w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-red-500 transition-all shadow-sm'
 						>
-							<ArrowLeft
-								size={22}
-								className='text-slate-600 dark:text-slate-300'
-							/>
+							<ArrowLeft size={22} className='text-slate-600 dark:text-slate-300' />
 						</Link>
 						<div>
 							<h1 className='text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white leading-none'>
@@ -286,15 +333,10 @@ export default function CheckoutPage() {
 
 							<div className='space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar'>
 								{items.map(item => (
-									<div
-										key={item.id}
-										className='flex justify-between items-center group'
-									>
+									<div key={item.id} className='flex justify-between items-center group'>
 										<div className='flex items-center gap-4'>
 											<div className='w-14 h-14 bg-white dark:bg-[#080B12] rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-800'>
-												<span className='font-black text-red-600 text-sm'>
-													x{item.quantity}
-												</span>
+												<span className='font-black text-red-600 text-sm'>x{item.quantity}</span>
 											</div>
 											<div>
 												<p className='text-sm font-black text-slate-800 dark:text-white uppercase leading-tight'>
@@ -325,19 +367,34 @@ export default function CheckoutPage() {
 									</div>
 								</div>
 
-								<button
-									onClick={handlePlaceOrder}
-									disabled={isSubmitting || items.length === 0}
-									className='w-full h-16 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-lg rounded-2xl transition-all shadow-xl shadow-red-600/30 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
-								>
-									{isSubmitting ? (
-										<Loader2 className='animate-spin' />
-									) : (
-										<>
-											Tasdiqlash <Check size={24} strokeWidth={4} />
-										</>
-									)}
-								</button>
+								<div className='flex flex-col gap-3'>
+									<button
+										onClick={handlePayWithClick}
+										disabled={isSubmitting || items.length === 0}
+										className='w-full h-14 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-green-600/20 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
+									>
+										{isSubmitting ? (
+											<Loader2 className='animate-spin' />
+										) : (
+											<>
+												To&apos;lovga o&apos;tish <Check size={20} strokeWidth={3} />
+											</>
+										)}
+									</button>
+									<button
+										onClick={handlePlaceOrder}
+										disabled={isSubmitting || items.length === 0}
+										className='w-full h-14 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-red-600/30 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
+									>
+										{isSubmitting ? (
+											<Loader2 className='animate-spin' />
+										) : (
+											<>
+												Tasdiqlash <Check size={20} strokeWidth={3} />
+											</>
+										)}
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>

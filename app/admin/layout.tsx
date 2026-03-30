@@ -1,85 +1,75 @@
-"use client";
+'use client'
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabaseClient";
-import { useAuthGuard } from "@/lib/useAuth";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import {
-  Loader2,
-  LogOut,
-  Menu,
-  Moon,
-  Sun,
-  UtensilsCrossed,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+} from '@/components/ui/dropdown-menu'
+import { supabase } from '@/lib/supabaseClient'
+import { useAuthGuard } from '@/lib/useAuth'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { Loader2, LogOut, Menu, Moon, Sun, UtensilsCrossed } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/order", label: "Buyurtmalar" },
-  { href: "/admin/reservation", label: "Xonalar" },
-  { href: "/admin/categories", label: "Kategoriyalar" },
-  { href: "/admin/menu", label: "Menu" },
-];
+  { href: '/admin/dashboard', label: 'Dashboard' },
+  { href: '/admin/order', label: 'Buyurtmalar' },
+  { href: '/admin/reservation', label: 'Xonalar' },
+  { href: '/admin/categories', label: 'Kategoriyalar' },
+  { href: '/admin/menu', label: 'Menu' },
+]
 
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const { loading, email } = useAuthGuard({ allowRoles: ["admin"] });
-  const pathname = usePathname();
-  const [darkMode, setDarkMode] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const { loading, email } = useAuthGuard({ allowRoles: ['admin'] })
+  const pathname = usePathname()
+  const [darkMode, setDarkMode] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const isDark =
-      savedTheme === "dark" ||
-      (!savedTheme &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const savedTheme = localStorage.getItem('theme')
+    const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
 
-    setDarkMode(isDark);
+    setDarkMode(isDark)
     if (isDark) {
-      document.documentElement.classList.add("dark");
+      document.documentElement.classList.add('dark')
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark')
     }
 
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+      setScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
+    const newMode = !darkMode
+    setDarkMode(newMode)
     if (newMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
     } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
     }
-  };
+  }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
 
   if (loading) {
     return (
@@ -89,7 +79,7 @@ export default function AdminLayout({
           <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -97,19 +87,16 @@ export default function AdminLayout({
       {/* Premium Glass Header */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
           scrolled
-            ? "glass dark:glass-dark shadow-lg"
-            : "bg-background/80 dark:bg-background/80",
+            ? 'glass dark:glass-dark shadow-lg'
+            : 'bg-background/80 dark:bg-background/80'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-3 group"
-            >
+            <Link href="/admin/dashboard" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="w-9 h-9 bg-[#FF0000] rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25 transition-transform duration-300 group-hover:scale-105">
                   <UtensilsCrossed size={18} className="text-white" />
@@ -124,16 +111,16 @@ export default function AdminLayout({
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const isActive = pathname.startsWith(item.href)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg",
+                      'relative px-4 py-2 text-sm font-medium transition-colors rounded-lg',
                       isActive
-                        ? "text-[#FF0000]"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? 'text-[#FF0000]'
+                        : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     {item.label}
@@ -141,15 +128,11 @@ export default function AdminLayout({
                       <motion.div
                         layoutId="activeNav"
                         className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#FF0000] rounded-full"
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 30,
-                        }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       />
                     )}
                   </Link>
-                );
+                )
               })}
             </nav>
 
@@ -178,12 +161,8 @@ export default function AdminLayout({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 mt-2">
                   <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-foreground">
-                      Admin
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {email}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">Admin</p>
+                    <p className="text-xs text-muted-foreground truncate">{email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -210,28 +189,28 @@ export default function AdminLayout({
           {mobileMenuOpen && (
             <motion.nav
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden py-3 border-t border-border"
             >
               <div className="flex flex-col gap-1">
                 {navItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = pathname.startsWith(item.href)
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "px-3 py-2.5 text-sm font-medium rounded-xl transition-colors",
+                        'px-3 py-2.5 text-sm font-medium rounded-xl transition-colors',
                         isActive
-                          ? "text-[#FF0000] bg-red-50 dark:bg-red-950/20"
-                          : "text-muted-foreground hover:bg-muted",
+                          ? 'text-[#FF0000] bg-red-50 dark:bg-red-950/20'
+                          : 'text-muted-foreground hover:bg-muted'
                       )}
                     >
                       {item.label}
                     </Link>
-                  );
+                  )
                 })}
               </div>
             </motion.nav>
@@ -252,5 +231,5 @@ export default function AdminLayout({
         </div>
       </main>
     </div>
-  );
+  )
 }

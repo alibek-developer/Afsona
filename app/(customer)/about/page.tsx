@@ -26,9 +26,12 @@ export default function AboutPage() {
 
 	useEffect(() => {
 		if (!emblaApi) return
-		emblaApi.on('select', () => {
-			setSelectedIndex(emblaApi.selectedScrollSnap())
-		})
+		const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap())
+		emblaApi.on('select', onSelect)
+		onSelect()
+		return () => {
+			emblaApi.off('select', onSelect)
+		}
 	}, [emblaApi])
 
 	const carouselImages = ['./hero-1.png', './hero-1.png', './hero-1.png']

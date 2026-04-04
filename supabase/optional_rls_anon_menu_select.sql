@@ -1,0 +1,15 @@
+-- OPTIONAL — only if checkout shows Postgres errors like:
+--   "permission denied for table menu_items" / "new row violates row-level security"
+-- when loading prices (server action uses anon key if SERVICE_ROLE is unset).
+--
+-- Your /menu page already uses the anon key; if menu works in the browser, RLS usually
+-- already allows SELECT. Run this only when the browser menu works but the server action fails.
+--
+-- 1) Inspect existing policies: Table Editor → menu_items → Policies
+-- 2) Avoid duplicate policy names. Example policy:
+
+-- CREATE POLICY "menu_items_anon_select_website"
+-- ON public.menu_items
+-- FOR SELECT
+-- TO anon
+-- USING (available_on_website IS TRUE);

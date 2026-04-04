@@ -1,10 +1,14 @@
 'use client'
 
+import {
+	createWebsiteOrder,
+	getCheckoutTotals,
+	type ResolvedOrderItem,
+} from '@/app/(customer)/checkout/actions'
 import { LocationPicker } from '@/components/customer/location-picker'
 import { Button } from '@/components/ui/button'
 import { Price } from '@/components/ui/price'
 import { useCartStore } from '@/lib/store'
-import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/lib/toast'
 import { useMounted } from '@/lib/useMounted'
 import {
@@ -18,12 +22,12 @@ import {
 	Utensils,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type OrderMode = 'dine-in' | 'delivery'
 
 export default function CheckoutPage() {
-	const { items, getTotal, clearCart } = useCartStore()
+	const { items, clearCart } = useCartStore()
 	const mounted = useMounted()
 
 	const [orderMode, setOrderMode] = useState<OrderMode>('delivery')
@@ -33,13 +37,88 @@ export default function CheckoutPage() {
 	const [deliveryAddress, setDeliveryAddress] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [orderPlaced, setOrderPlaced] = useState(false)
-	const [subtotal, setSubtotal] = useState(0)
 	const [latitude, setLatitude] = useState<number | null>(null)
 	const [longitude, setLongitude] = useState<number | null>(null)
 
+	const [quoteLoading, setQuoteLoading] = useState(false)
+	const [quoteLines, setQuoteLines] = useState<ResolvedOrderItem[] | null>(
+		null,
+	)
+	const [serverTotal, setServerTotal] = useState<number | null>(null)
+	const [quoteError, setQuoteError] = useState<string | null>(null)
+
+	const cartSignature = useMemo(
+		() => items.map(i => `${i.id}:${i.quantity}`).sort().join('|'),
+		[items],
+	)
+
+	const linePayload = useMemo(
+		() => items.map(i => ({ menu_item_id: i.id, quantity: i.quantity })),
+		[items],
+	)
+
+	const idempotencyRef = useRef<string | null>(null)
+	const prevCartSigRef = useRef<string>('')
+
 	useEffect(() => {
-		if (mounted) setSubtotal(getTotal())
-	}, [items, mounted, getTotal])
+		if (prevCartSigRef.current !== cartSignature) {
+			prevCartSigRef.current = cartSignature
+			idempotencyRef.current = null
+		}
+	}, [cartSignature])
+
+	const getIdempotencyKey = () => {
+		if (!cartSignature) return ''
+		if (!idempotencyRef.current) {
+			idempotencyRef.current = crypto.randomUUID()
+		}
+		return idempotencyRef.current
+	}
+
+	useEffect(() => {
+		if (!mounted || items.length === 0) {
+			setQuoteLines(null)
+			setServerTotal(null)
+			setQuoteLoading(false)
+			setQuoteError(null)
+			return
+		}
+
+		let cancelled = false
+		setQuoteLoading(true)
+		setQuoteError(null)
+
+		getCheckoutTotals(linePayload)
+			.then(result => {
+				if (cancelled) return
+				if (result.ok) {
+					setQuoteLines(result.resolved)
+					setServerTotal(result.total)
+					setQuoteError(null)
+				} else {
+					setQuoteLines(null)
+					setServerTotal(null)
+					setQuoteError(result.message)
+					toast.error(result.message)
+				}
+			})
+			.catch(err => {
+				if (cancelled) return
+				const message =
+					err instanceof Error ? err.message : "Narxni yuklab bo'lmadi"
+				setQuoteLines(null)
+				setServerTotal(null)
+				setQuoteError(message)
+				toast.error(message)
+			})
+			.finally(() => {
+				if (!cancelled) setQuoteLoading(false)
+			})
+
+		return () => {
+			cancelled = true
+		}
+	}, [mounted, cartSignature, linePayload, items.length])
 
 	const handlePhoneChange = (val: string) => {
 		if (!val.startsWith('+998')) {
@@ -88,173 +167,128 @@ export default function CheckoutPage() {
 		return true
 	}
 
-	const buildOrderData = () => ({
+	const buildOrderBase = () => ({
+		idempotencyKey: getIdempotencyKey(),
+		lines: linePayload,
 		customer_name: customerName.trim(),
 		phone: customerPhone.trim(),
 		delivery_address:
 			orderMode === 'delivery' ? deliveryAddress : `Stol: ${tableNumber}`,
 		type: orderMode,
-		status: 'yangi',
-		items,
-		total_amount: subtotal,
-		source: 'website',
-		...(orderMode === 'delivery' && latitude !== null && longitude !== null
-			? { latitude, longitude }
-			: {}),
+		latitude: orderMode === 'delivery' ? latitude : null,
+		longitude: orderMode === 'delivery' ? longitude : null,
 	})
 
-	const handlePayWithClick = async () => {
-		if (isSubmitting || !validateFields()) return
+	const redirectToPayment = async (
+		payment_method: 'click' | 'payme',
+		orderId: string,
+		amount: number,
+	) => {
+		const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+		const returnUrl = `${siteUrl}/payment-success?order_id=${orderId}`
 
-		setIsSubmitting(true)
-		try {
-			const orderData: Record<string, unknown> = buildOrderData()
-			orderData.payment_method = 'click'
+		const functionUrl =
+			payment_method === 'click'
+				? process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
+				: process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYME_PAYMENT
 
-			const { data, error } = await supabase
-				.from('orders')
-				.insert([orderData])
-				.select('id')
-				.single()
-
-			if (error) throw error
-			if (!data?.id) throw new Error('Order ID not returned')
-
-			const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-			const returnUrl = `${siteUrl}/payment-success?order_id=${data.id}`
-
-			const functionUrl =
-				process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
-			if (!functionUrl) {
-				toast.error(
-					"To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.",
-				)
-				return
-			}
-
-			const response = await fetch(functionUrl, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					order_id: data.id,
-					amount: subtotal,
-					return_url: returnUrl,
-				}),
-			})
-
-			const result = await response.json()
-
-			if (!response.ok || !result.success || !result.payment_url) {
-				throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
-			}
-
-			clearCart()
-			window.location.href = result.payment_url
-		} catch (err) {
-			console.error('Click payment error:', err)
-			if (err instanceof Error && err.message.includes('column')) {
-				toast.error(
-					'Buyurtma yaratishda xatolik. Administratorga murojaat qiling.',
-				)
-			} else {
-				toast.error(
-					err instanceof Error
-						? err.message
-						: 'Xatolik yuz berdi, qaytadan urinib koʻring',
-				)
-			}
-		} finally {
-			setIsSubmitting(false)
+		if (!functionUrl) {
+			toast.error(
+				"To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.",
+			)
+			return false
 		}
+
+		const response = await fetch(functionUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				order_id: orderId,
+				amount,
+				return_url: returnUrl,
+			}),
+		})
+
+		const result = await response.json()
+
+		if (!response.ok || !result.success || !result.payment_url) {
+			throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
+		}
+
+		clearCart()
+		window.location.href = result.payment_url
+		return true
 	}
 
 	const handlePayWithPayme = async () => {
-		if (isSubmitting || !validateFields()) return
+		if (isSubmitting || !validateFields() || items.length === 0) return
+		if (!getIdempotencyKey()) return
+		if (serverTotal === null || quoteLoading) {
+			toast.error('Narxlar hali tayyor emas, biroz kuting')
+			return
+		}
 
 		setIsSubmitting(true)
 		try {
-			const orderData: Record<string, unknown> = buildOrderData()
-			orderData.payment_method = 'payme'
+			const created = await createWebsiteOrder({
+				...buildOrderBase(),
+				payment_method: 'payme',
+			})
 
-			const { data, error } = await supabase
-				.from('orders')
-				.insert([orderData])
-				.select('id')
-				.single()
-
-			if (error) throw error
-			if (!data?.id) throw new Error('Order ID not returned')
-
-			const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-			const returnUrl = `${siteUrl}/payment-success?order_id=${data.id}`
-
-			const functionUrl =
-				process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYME_PAYMENT
-			if (!functionUrl) {
-				toast.error(
-					"To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.",
-				)
+			if (!created.ok) {
+				toast.error(created.message)
 				return
 			}
 
-			const response = await fetch(functionUrl, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					order_id: data.id,
-					amount: subtotal,
-					return_url: returnUrl,
-				}),
-			})
-
-			const result = await response.json()
-
-			if (!response.ok || !result.success || !result.payment_url) {
-				throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
-			}
-
-			clearCart()
-			window.location.href = result.payment_url
+			await redirectToPayment(
+				'payme',
+				created.orderId,
+				created.total_amount,
+			)
 		} catch (err) {
 			console.error('Payme payment error:', err)
-			if (err instanceof Error && err.message.includes('column')) {
-				toast.error(
-					'Buyurtma yaratishda xatolik. Administratorga murojaat qiling.',
-				)
-			} else {
-				toast.error(
-					err instanceof Error
-						? err.message
-						: 'Xatolik yuz berdi, qaytadan urinib koʻring',
-				)
-			}
+			toast.error(
+				err instanceof Error
+					? err.message
+					: 'Xatolik yuz berdi, qaytadan urinib koʻring',
+			)
 		} finally {
 			setIsSubmitting(false)
 		}
 	}
 
-	const handlePlaceOrder = async () => {
-		if (isSubmitting || !validateFields()) return
+	const handlePayWithClick = async () => {
+		if (isSubmitting || !validateFields() || items.length === 0) return
+		if (!getIdempotencyKey()) return
+		if (serverTotal === null || quoteLoading) {
+			toast.error('Narxlar hali tayyor emas, biroz kuting')
+			return
+		}
 
 		setIsSubmitting(true)
 		try {
-			const orderData = buildOrderData()
-			const { error } = await supabase.from('orders').insert([orderData])
+			const created = await createWebsiteOrder({
+				...buildOrderBase(),
+				payment_method: 'click',
+			})
 
-			if (error) throw error
-
-			toast.success('Buyurtma qabul qilindi!')
-			setOrderPlaced(true)
-			clearCart()
-		} catch (err) {
-			console.error('Order creation error:', err)
-			if (err instanceof Error && err.message.includes('column')) {
-				toast.error(
-					'Buyurtma yaratishda xatolik yuz berdi. Administratorga murojaat qiling.',
-				)
-			} else {
-				toast.error('Xatolik yuz berdi, qaytadan urinib koʻring')
+			if (!created.ok) {
+				toast.error(created.message)
+				return
 			}
+
+			await redirectToPayment(
+				'click',
+				created.orderId,
+				created.total_amount,
+			)
+		} catch (err) {
+			console.error('Click payment error:', err)
+			toast.error(
+				err instanceof Error
+					? err.message
+					: 'Xatolik yuz berdi, qaytadan urinib koʻring',
+			)
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -281,6 +315,8 @@ export default function CheckoutPage() {
 				</Link>
 			</div>
 		)
+
+	const displayLines: ResolvedOrderItem[] | null = quoteLines
 
 	return (
 		<div className='bg-white dark:bg-[#080B12] min-h-screen transition-colors duration-300'>
@@ -411,32 +447,64 @@ export default function CheckoutPage() {
 								<div className='h-1 w-12 bg-red-600 rounded-full' />
 							</div>
 
+							<p className='text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4'>
+								Narxlar serverda tekshiriladi
+							</p>
+
 							<div className='space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar'>
-								{items.map(item => (
-									<div
-										key={item.id}
-										className='flex justify-between items-center group'
-									>
-										<div className='flex items-center gap-4'>
-											<div className='w-14 h-14 bg-white dark:bg-[#080B12] rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-800'>
-												<span className='font-black text-red-600 text-sm'>
-													x{item.quantity}
-												</span>
+								{quoteLoading && (
+									<div className='flex items-center gap-2 text-slate-500 text-sm font-bold'>
+										<Loader2 className='w-5 h-5 animate-spin text-red-500' />
+										Narxlar yuklanmoqda...
+									</div>
+								)}
+								{displayLines &&
+									displayLines.map(line => (
+										<div
+											key={line.id}
+											className='flex justify-between items-center group'
+										>
+											<div className='flex items-center gap-4'>
+												<div className='w-14 h-14 bg-white dark:bg-[#080B12] rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-800'>
+													<span className='font-black text-red-600 text-sm'>
+														x{line.quantity}
+													</span>
+												</div>
+												<div>
+													<p className='text-sm font-black text-slate-800 dark:text-white uppercase leading-tight'>
+														{line.name}
+													</p>
+													<p className='text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-0.5 tracking-wider'>
+														<Price value={line.price} />
+													</p>
+												</div>
 											</div>
-											<div>
-												<p className='text-sm font-black text-slate-800 dark:text-white uppercase leading-tight'>
-													{item.name}
-												</p>
-												<p className='text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-0.5 tracking-wider'>
-													<Price value={item.price} />
-												</p>
-											</div>
+											<p className='text-sm font-black text-slate-900 dark:text-slate-100'>
+												<Price value={line.price * line.quantity} />
+											</p>
 										</div>
-										<p className='text-sm font-black text-slate-900 dark:text-slate-100'>
-											<Price value={item.price * item.quantity} />
+									))}
+								{!quoteLoading && !displayLines && items.length > 0 && (
+									<div className='rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 p-4 space-y-2'>
+										<p className='text-sm text-red-700 dark:text-red-400 font-bold'>
+											Narxni yuklab bo&apos;lmadi
+										</p>
+										{quoteError && (
+											<p className='text-xs text-red-600/90 dark:text-red-300/90 font-mono break-words'>
+												{quoteError}
+											</p>
+										)}
+										<p className='text-xs text-slate-600 dark:text-slate-400'>
+											Eslatma: narxlar Next.js server action orqali keladi (alohida API
+											URL emas). Agar xato &quot;permission&quot; yoki &quot;RLS&quot;
+											bo&apos;lsa, Supabase da{' '}
+											<code className='text-[10px] bg-white/50 dark:bg-black/30 px-1 rounded'>
+												menu_items
+											</code>{' '}
+											uchun anon SELECT siyosatini tekshiring.
 										</p>
 									</div>
-								))}
+								)}
 							</div>
 
 							<div className='pt-8 border-t border-slate-200 dark:border-slate-800 space-y-6'>
@@ -445,17 +513,28 @@ export default function CheckoutPage() {
 										<span className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[3px]'>
 											Jami to'lov:
 										</span>
-										<Price
-											value={subtotal}
-											className='text-3xl font-black text-red-600 tracking-tighter block'
-										/>
+										{quoteLoading || serverTotal === null ? (
+											<div className='flex items-center gap-2 h-10'>
+												<Loader2 className='w-8 h-8 animate-spin text-red-500' />
+											</div>
+										) : (
+											<Price
+												value={serverTotal}
+												className='text-3xl font-black text-red-600 tracking-tighter block'
+											/>
+										)}
 									</div>
 								</div>
 
 								<div className='flex flex-col gap-3'>
 									<button
 										onClick={handlePayWithPayme}
-										disabled={isSubmitting || items.length === 0}
+										disabled={
+											isSubmitting ||
+											items.length === 0 ||
+											quoteLoading ||
+											serverTotal === null
+										}
 										className='w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
 									>
 										{isSubmitting ? (
@@ -466,6 +545,18 @@ export default function CheckoutPage() {
 												<Check size={20} strokeWidth={3} />
 											</>
 										)}
+									</button>
+									<button
+										onClick={handlePayWithClick}
+										disabled={
+											isSubmitting ||
+											items.length === 0 ||
+											quoteLoading ||
+											serverTotal === null
+										}
+										className='w-full h-14 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-[0.96] flex items-center justify-center gap-2 uppercase tracking-tight'
+									>
+										Click bilan to&apos;lov
 									</button>
 								</div>
 							</div>

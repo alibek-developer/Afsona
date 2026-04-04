@@ -168,6 +168,71 @@ export default function CheckoutPage() {
 		}
 	}
 
+	const handlePayWithPayme = async () => {
+		if (isSubmitting || !validateFields()) return
+
+		setIsSubmitting(true)
+		try {
+			const orderData: Record<string, unknown> = buildOrderData()
+			orderData.payment_method = 'payme'
+
+			const { data, error } = await supabase
+				.from('orders')
+				.insert([orderData])
+				.select('id')
+				.single()
+
+			if (error) throw error
+			if (!data?.id) throw new Error('Order ID not returned')
+
+			const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+			const returnUrl = `${siteUrl}/payment-success?order_id=${data.id}`
+
+			const functionUrl =
+				process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYME_PAYMENT
+			if (!functionUrl) {
+				toast.error(
+					"To'lov tizimi sozlanmagan. Iltimos, administratorga murojaat qiling.",
+				)
+				return
+			}
+
+			const response = await fetch(functionUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					order_id: data.id,
+					amount: subtotal,
+					return_url: returnUrl,
+				}),
+			})
+
+			const result = await response.json()
+
+			if (!response.ok || !result.success || !result.payment_url) {
+				throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
+			}
+
+			clearCart()
+			window.location.href = result.payment_url
+		} catch (err) {
+			console.error('Payme payment error:', err)
+			if (err instanceof Error && err.message.includes('column')) {
+				toast.error(
+					'Buyurtma yaratishda xatolik. Administratorga murojaat qiling.',
+				)
+			} else {
+				toast.error(
+					err instanceof Error
+						? err.message
+						: 'Xatolik yuz berdi, qaytadan urinib koʻring',
+				)
+			}
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
 	const handlePlaceOrder = async () => {
 		if (isSubmitting || !validateFields()) return
 
@@ -389,15 +454,15 @@ export default function CheckoutPage() {
 
 								<div className='flex flex-col gap-3'>
 									<button
-										onClick={handlePayWithClick}
+										onClick={handlePayWithPayme}
 										disabled={isSubmitting || items.length === 0}
-										className='w-full h-14 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-green-600/20 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
+										className='w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
 									>
 										{isSubmitting ? (
 											<Loader2 className='animate-spin' />
 										) : (
 											<>
-												To&apos;lovga o&apos;tish{' '}
+												Payme bilan to&apos;lov{' '}
 												<Check size={20} strokeWidth={3} />
 											</>
 										)}

@@ -7,6 +7,45 @@ import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
+const STATUS_TIMESTAMP_FIELDS: Record<string, string> = {
+  yangi: '',
+  qabul_qilindi: 'accepted_at',
+  tayyorlanmoqda: 'preparing_at',
+  tayyor: 'ready_at',
+  olib_ketildi: 'picked_at',
+  "yo'lda": 'on_the_way_at',
+  on_the_way: 'on_the_way_at',
+  yetkazildi: 'delivered_at',
+  delivered: 'delivered_at',
+}
+
+async function createStatusNotification(
+  orderId: string,
+  customerPhone: string,
+  oldStatus: string,
+  newStatus: string
+) {
+  const statusLabels: Record<string, string> = {
+    yangi: 'Yangi', qabul_qilindi: 'Qabul qilindi', tayyorlanmoqda: 'Tayyorlanmoqda',
+    tayyor: 'Tayyor', olib_ketildi: 'Olib ketildi', "yo'lda": "Yo'lda",
+    on_the_way: "Yo'lda", yetkazildi: 'Yetkazildi', delivered: 'Yetkazildi',
+  }
+  
+  try {
+    await supabase.from('notifications').insert({
+      user_type: 'customer',
+      user_ref: customerPhone,
+      order_id: orderId,
+      title: `Buyurtma: ${statusLabels[newStatus] || newStatus}`,
+      body: `Holat yangilandi: ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}`,
+      type: 'order_status_changed',
+      is_read: false,
+    })
+  } catch (e) {
+    console.error('[notification] Error:', e)
+  }
+}
+
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight,
@@ -268,7 +307,15 @@ export default function OrderDetailPage() {
     setOrder({ ...order, status: newStatus })
 
     try {
-      const updateData: any = { status: newStatus }
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      }
+
+      const timestampField = STATUS_TIMESTAMP_FIELDS[newStatus]
+      if (timestampField) {
+        updateData[timestampField] = new Date().toISOString()
+      }
 
       // If accepting as courier, add courier info
       if (newStatus === 'olib_ketildi' && !order.courier_id) {
@@ -281,6 +328,24 @@ export default function OrderDetailPage() {
       const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
 
       if (error) throw error
+
+      // Record status history
+      try {
+        await supabase.from('order_status_history').insert({
+          order_id: order.id,
+          old_status: previousStatus,
+          new_status: newStatus,
+          changed_by: 'call_center_operator',
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) {
+        console.error('[status history] Error:', e)
+      }
+
+      // Create notification for customer
+      if (order.phone) {
+        createStatusNotification(order.id, order.phone, previousStatus, newStatus)
+      }
 
       const successStatusConfig = getStatusConfig(newStatus)
       toast.success(`Status yangilandi: ${successStatusConfig.label}`)

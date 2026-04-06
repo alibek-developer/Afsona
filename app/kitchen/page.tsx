@@ -460,10 +460,30 @@ export default function KitchenDashboard() {
 
   const updateOrderStatus = async (id: string, newStatus: OrderStatus) => {
     const dbStatus = newStatus === 'new' ? 'yangi' : newStatus === 'preparing' ? 'tayyorlanmoqda' : 'ready'
+    const timestampField = newStatus === 'preparing' ? 'preparing_at' : newStatus === 'ready' ? 'ready_at' : null
 
     try {
-      const { error } = await supabase.from('orders').update({ status: dbStatus }).eq('id', id)
+      const updateData: Record<string, any> = { 
+        status: dbStatus,
+        updated_at: new Date().toISOString(),
+      }
+      if (timestampField) {
+        updateData[timestampField] = new Date().toISOString()
+      }
+
+      const { error } = await supabase.from('orders').update(updateData).eq('id', id)
       if (error) throw error
+
+      // Record status history
+      try {
+        await supabase.from('order_status_history').insert({
+          order_id: id,
+          old_status: orders.find(o => o.id === id)?.status === 'new' ? 'yangi' : orders.find(o => o.id === id)?.status,
+          new_status: dbStatus,
+          changed_by: 'kitchen',
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) { console.error('[history]', e) }
 
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)))
       toast.success('Status yangilandi')

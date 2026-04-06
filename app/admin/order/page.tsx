@@ -207,11 +207,28 @@ export default function AdminOrdersPage() {
   }, [activeTab])
 
   const updateOrderStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', id)
+    const order = orders.find(o => o.id === id)
+    const oldStatus = order?.status
+    
+    const { error } = await supabase.from('orders').update({ 
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
 
     if (error) {
       toast.error('Statusni yangilab boʻlmadi')
     } else {
+      // Record status history
+      try {
+        await supabase.from('order_status_history').insert({
+          order_id: id,
+          old_status: oldStatus,
+          new_status: newStatus,
+          changed_by: 'admin',
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) { console.error('[history]', e) }
+      
       toast.success('Status yangilandi')
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)))
     }

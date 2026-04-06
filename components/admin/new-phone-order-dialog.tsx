@@ -214,7 +214,6 @@ export function NewPhoneOrderDialog({
 							<SelectContent>
 								<SelectItem value='cash'>Naqd pul</SelectItem>
 								<SelectItem value='card'>Karta</SelectItem>
-								<SelectItem value='click'>Click</SelectItem>
 								<SelectItem value='payme'>Payme</SelectItem>
 							</SelectContent>
 						</Select>

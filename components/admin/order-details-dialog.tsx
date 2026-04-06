@@ -31,7 +31,6 @@ const STATUS_LABELS: Record<string, string> = {
 const PAYMENT_LABELS: Record<string, string> = {
 	cash: 'Naqd pul',
 	card: 'Karta',
-	click: 'Click',
 	payme: 'Payme',
 }
 

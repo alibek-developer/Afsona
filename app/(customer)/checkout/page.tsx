@@ -14,17 +14,20 @@ import { useMounted } from '@/lib/useMounted'
 import {
 	ArrowLeft,
 	Check,
+	CreditCard,
 	Loader2,
 	Map,
 	MapPin,
 	ShoppingBag,
 	User,
 	Utensils,
+	Wallet,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 type OrderMode = 'dine-in' | 'delivery'
+type PaymentMethod = 'cash' | 'payme'
 
 export default function CheckoutPage() {
 	const { items, clearCart } = useCartStore()
@@ -39,6 +42,7 @@ export default function CheckoutPage() {
 	const [orderPlaced, setOrderPlaced] = useState(false)
 	const [latitude, setLatitude] = useState<number | null>(null)
 	const [longitude, setLongitude] = useState<number | null>(null)
+	const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
 
 	const [quoteLoading, setQuoteLoading] = useState(false)
 	const [quoteLines, setQuoteLines] = useState<ResolvedOrderItem[] | null>(
@@ -179,18 +183,14 @@ export default function CheckoutPage() {
 		longitude: orderMode === 'delivery' ? longitude : null,
 	})
 
-	const redirectToPayment = async (
-		payment_method: 'click' | 'payme',
+	const redirectToPayme = async (
 		orderId: string,
 		amount: number,
-	) => {
+	): Promise<boolean> => {
 		const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
 		const returnUrl = `${siteUrl}/payment-success?order_id=${orderId}`
 
-		const functionUrl =
-			payment_method === 'click'
-				? process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYMENT
-				: process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYME_PAYMENT
+		const functionUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_CREATE_PAYME_PAYMENT
 
 		if (!functionUrl) {
 			toast.error(
@@ -215,12 +215,11 @@ export default function CheckoutPage() {
 			throw new Error(result.error || "To'lov yaratishda xatolik yuz berdi")
 		}
 
-		clearCart()
 		window.location.href = result.payment_url
 		return true
 	}
 
-	const handlePayWithPayme = async () => {
+	const handlePlaceOrder = async () => {
 		if (isSubmitting || !validateFields() || items.length === 0) return
 		if (!getIdempotencyKey()) return
 		if (serverTotal === null || quoteLoading) {
@@ -232,7 +231,7 @@ export default function CheckoutPage() {
 		try {
 			const created = await createWebsiteOrder({
 				...buildOrderBase(),
-				payment_method: 'payme',
+				payment_method: paymentMethod,
 			})
 
 			if (!created.ok) {
@@ -240,50 +239,19 @@ export default function CheckoutPage() {
 				return
 			}
 
-			await redirectToPayment(
-				'payme',
-				created.orderId,
-				created.total_amount,
-			)
-		} catch (err) {
-			console.error('Payme payment error:', err)
-			toast.error(
-				err instanceof Error
-					? err.message
-					: 'Xatolik yuz berdi, qaytadan urinib koʻring',
-			)
-		} finally {
-			setIsSubmitting(false)
-		}
-	}
-
-	const handlePayWithClick = async () => {
-		if (isSubmitting || !validateFields() || items.length === 0) return
-		if (!getIdempotencyKey()) return
-		if (serverTotal === null || quoteLoading) {
-			toast.error('Narxlar hali tayyor emas, biroz kuting')
-			return
-		}
-
-		setIsSubmitting(true)
-		try {
-			const created = await createWebsiteOrder({
-				...buildOrderBase(),
-				payment_method: 'click',
-			})
-
-			if (!created.ok) {
-				toast.error(created.message)
-				return
+			if (paymentMethod === 'payme') {
+				const redirected = await redirectToPayme(created.orderId, created.total_amount)
+				if (!redirected) {
+					toast.error("To'lov sahifasiga yo'naltirishda xatolik")
+					return
+				}
+				clearCart()
+			} else {
+				clearCart()
+				setOrderPlaced(true)
 			}
-
-			await redirectToPayment(
-				'click',
-				created.orderId,
-				created.total_amount,
-			)
 		} catch (err) {
-			console.error('Click payment error:', err)
+			console.error('Order submission error:', err)
 			toast.error(
 				err instanceof Error
 					? err.message
@@ -361,7 +329,7 @@ export default function CheckoutPage() {
 										<User size={20} strokeWidth={2.5} />
 									</div>
 									<h2 className='text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight'>
-										Mijoz ma'lumotlari
+										Mijoz ma&apos;lumotlari
 									</h2>
 								</div>
 								<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -511,7 +479,7 @@ export default function CheckoutPage() {
 								<div className='flex justify-between items-end'>
 									<div className='space-y-1'>
 										<span className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[3px]'>
-											Jami to'lov:
+											Jami to&apos;lov:
 										</span>
 										{quoteLoading || serverTotal === null ? (
 											<div className='flex items-center gap-2 h-10'>
@@ -526,39 +494,98 @@ export default function CheckoutPage() {
 									</div>
 								</div>
 
-								<div className='flex flex-col gap-3'>
-									<button
-										onClick={handlePayWithPayme}
-										disabled={
-											isSubmitting ||
-											items.length === 0 ||
-											quoteLoading ||
-											serverTotal === null
-										}
-										className='w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-base rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight'
-									>
-										{isSubmitting ? (
-											<Loader2 className='animate-spin' />
-										) : (
-											<>
-												Payme bilan to&apos;lov{' '}
-												<Check size={20} strokeWidth={3} />
-											</>
-										)}
-									</button>
-									<button
-										onClick={handlePayWithClick}
-										disabled={
-											isSubmitting ||
-											items.length === 0 ||
-											quoteLoading ||
-											serverTotal === null
-										}
-										className='w-full h-14 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-black text-sm rounded-2xl transition-all shadow-lg active:scale-[0.96] flex items-center justify-center gap-2 uppercase tracking-tight'
-									>
-										Click bilan to&apos;lov
-									</button>
+								{/* Payment Method Selection */}
+								<div className='space-y-3'>
+									<label className='text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[3px]'>
+										To&apos;lov usuli
+									</label>
+									<div className='grid grid-cols-2 gap-3'>
+										<button
+											type='button'
+											onClick={() => setPaymentMethod('cash')}
+											className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+												paymentMethod === 'cash'
+													? 'border-red-600 bg-red-50 dark:bg-red-950/30 dark:border-red-500'
+													: 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#080B12] hover:border-slate-300 dark:hover:border-slate-600'
+											}`}
+										>
+											<div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+												paymentMethod === 'cash'
+													? 'bg-red-600 text-white'
+													: 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+											}`}>
+												<Wallet size={18} />
+											</div>
+											<div className='text-left'>
+												<p className={`text-sm font-black ${
+													paymentMethod === 'cash'
+														? 'text-red-600 dark:text-red-400'
+														: 'text-slate-700 dark:text-slate-200'
+												}`}>
+													Naqd
+												</p>
+												<p className='text-[10px] text-slate-400 dark:text-slate-500 font-medium'>
+													Qabul qilganda
+												</p>
+											</div>
+										</button>
+
+										<button
+											type='button'
+											onClick={() => setPaymentMethod('payme')}
+											className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+												paymentMethod === 'payme'
+													? 'border-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-500'
+													: 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#080B12] hover:border-slate-300 dark:hover:border-slate-600'
+											}`}
+										>
+											<div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+												paymentMethod === 'payme'
+													? 'bg-blue-600 text-white'
+													: 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+											}`}>
+												<CreditCard size={18} />
+											</div>
+											<div className='text-left'>
+												<p className={`text-sm font-black ${
+													paymentMethod === 'payme'
+														? 'text-blue-600 dark:text-blue-400'
+														: 'text-slate-700 dark:text-slate-200'
+												}`}>
+													Karta
+												</p>
+												<p className='text-[10px] text-slate-400 dark:text-slate-500 font-medium'>
+													Payme orqali
+												</p>
+											</div>
+										</button>
+									</div>
 								</div>
+
+								{/* Submit Button */}
+								<button
+									onClick={handlePlaceOrder}
+									disabled={
+										isSubmitting ||
+										items.length === 0 ||
+										quoteLoading ||
+										serverTotal === null
+									}
+									className={`w-full h-14 font-black text-base rounded-2xl transition-all shadow-xl active:scale-[0.96] flex items-center justify-center gap-3 uppercase tracking-tight text-white ${
+										paymentMethod === 'payme'
+											? 'bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 shadow-blue-600/20'
+											: 'bg-red-600 hover:bg-red-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 shadow-red-600/20'
+									}`}
+								>
+									{isSubmitting ? (
+										<Loader2 className='animate-spin' />
+									) : (
+										<>
+											{paymentMethod === 'cash' ? 'Buyurtma berish' : 'Payme bilan to\'lov'}
+											<Check size={20} strokeWidth={3} />
+										</>
+									)}
+								</button>
 							</div>
 						</div>
 					</div>

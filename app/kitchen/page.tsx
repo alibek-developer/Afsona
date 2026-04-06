@@ -94,7 +94,7 @@ function useOrderNotification() {
     [playNotification]
   )
 
-  return { soundEnabled, setSoundEnabled, checkNewOrders }
+  return { soundEnabled, setSoundEnabled, checkNewOrders, playNotification }
 }
 
 // Order timer component
@@ -418,7 +418,7 @@ export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('comfortable')
-  const { soundEnabled, setSoundEnabled, checkNewOrders } = useOrderNotification()
+  const { soundEnabled, setSoundEnabled, checkNewOrders, playNotification } = useOrderNotification()
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -498,15 +498,79 @@ export default function KitchenDashboard() {
 
     const channel = supabase
       .channel('kitchen-orders-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        fetchOrders()
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          const newOrder = payload.new as any
+          console.log('[kitchen] INSERT received:', newOrder.id, 'status:', newOrder.status)
+          const normalized = normalizeStatus(newOrder.status)
+          console.log('[kitchen] normalized status:', normalized)
+          if (['new', 'preparing', 'ready'].includes(normalized)) {
+            const order = { ...newOrder, status: normalized } as Order
+            setOrders((prev) => {
+              if (prev.find((o) => o.id === order.id)) return prev
+              console.log('[kitchen] Adding new order to state:', order.id)
+              return [...prev, order]
+            })
+            playNotification()
+            toast.success(`Yangi buyurtma: #${newOrder.id.slice(-5)}`)
+          } else {
+            console.log('[kitchen] INSERT ignored — status not visible:', normalized)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const updated = payload.new as any
+          console.log('[kitchen] UPDATE received:', updated.id, 'status:', updated.status)
+          const normalized = normalizeStatus(updated.status)
+          setOrders((prev) => {
+            const exists = prev.find((o) => o.id === updated.id)
+            if (!exists) {
+              if (['new', 'preparing', 'ready'].includes(normalized)) {
+                console.log('[kitchen] UPDATE: order not in state, adding:', updated.id)
+                return [...prev, { ...updated, status: normalized } as Order]
+              }
+              return prev
+            }
+            if (['new', 'preparing', 'ready'].includes(normalized)) {
+              return prev.map((o) =>
+                o.id === updated.id ? { ...o, ...updated, status: normalized } : o
+              )
+            }
+            console.log('[kitchen] UPDATE: order completed, removing:', updated.id)
+            return prev.filter((o) => o.id !== updated.id)
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'orders' },
+        (payload) => {
+          const deleted = payload.old as any
+          console.log('[kitchen] DELETE received:', deleted.id)
+          setOrders((prev) => prev.filter((o) => o.id !== deleted.id))
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[kitchen] Realtime subscription active — listening for orders')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[kitchen] Realtime channel error — orders may not update live')
+        } else if (status === 'TIMED_OUT') {
+          console.error('[kitchen] Realtime subscription timed out')
+        } else {
+          console.log('[kitchen] Realtime status:', status)
+        }
       })
-      .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchOrders])
+  }, [])
 
   const newOrders = orders.filter((o) => o.status === 'new')
   const preparingOrders = orders.filter((o) => o.status === 'preparing')

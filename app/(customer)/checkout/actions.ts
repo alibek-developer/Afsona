@@ -180,7 +180,7 @@ export type CreateWebsiteOrderInput = {
 	delivery_address: string
 	latitude?: number | null
 	longitude?: number | null
-	payment_method?: 'click' | 'payme' | 'cash' | null
+	payment_method?: 'cash' | 'payme' | null
 }
 
 /**

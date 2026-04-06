@@ -42,7 +42,7 @@ export interface Order {
 		| 'tayyorlanmoqda'
 		| 'yakunlandi'
 	source: 'website' | 'mobile' | 'call-center'
-	payment_method: 'cash' | 'card' | 'click' | 'payme'
+	payment_method: 'cash' | 'card' | 'payme'
 }
 
 export const CATEGORIES = [

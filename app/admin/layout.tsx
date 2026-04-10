@@ -1,6 +1,5 @@
 'use client'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +22,7 @@ const navItems = [
   { href: '/admin/reservation', label: 'Xonalar' },
   { href: '/admin/categories', label: 'Kategoriyalar' },
   { href: '/admin/menu', label: 'Menu' },
+  { href: '/admin/banners', label: 'Banners' },
 ]
 
 export default function AdminLayout({

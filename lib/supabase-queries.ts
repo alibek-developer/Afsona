@@ -1,4 +1,5 @@
 import { Website_Banner, BannerFormData } from './banner'
+import { supabase } from './supabaseClient'
 
 /**
  * API Wrapper for Banner operations
@@ -17,24 +18,40 @@ export const bannerService = {
 
   // Create banner
   async create(data: BannerFormData & { branch_id: string }) {
-    const response = await fetch('/api/banners', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to create banner');
-    return await response.json();
+    try {
+      const response = await fetch('/api/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to create banner');
+      
+      return { success: true, data: result.data };
+    } catch (error: any) {
+      console.error('Error creating banner:', error);
+      return { success: false, error: error.message };
+    }
   },
 
   // Update banner
   async update(id: string, data: Partial<BannerFormData>) {
-    const response = await fetch(`/api/banners/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to update banner');
-    return await response.json();
+    try {
+      const response = await fetch(`/api/banners/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update banner');
+      
+      return { success: true, data: result.data };
+    } catch (error: any) {
+      console.error('Error updating banner:', error);
+      return { success: false, error: error.message };
+    }
   },
 
   // Delete banner
@@ -42,7 +59,10 @@ export const bannerService = {
     const response = await fetch(`/api/banners/${id}`, {
       method: 'DELETE',
     });
-    if (!response.ok) throw new Error('Failed to delete banner');
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to delete banner');
+    }
     return await response.json();
   },
 

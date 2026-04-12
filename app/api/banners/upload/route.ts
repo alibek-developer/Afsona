@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const filename = `${branchId}/${timestamp}-${file.name.replace(/\s+/g, '_')}`;
 
     const { data, error } = await supabase.storage
-      .from('website-banners')
+      .from('banners')
       .upload(filename, file, {
         cacheControl: '3600',
         upsert: false,
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     const { data: publicUrl } = supabase.storage
-      .from('website-banners')
+      .from('banners')
       .getPublicUrl(data.path);
 
     return NextResponse.json({

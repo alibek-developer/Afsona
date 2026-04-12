@@ -33,13 +33,13 @@ export default function ImageUploadField({ value, onChange, branchId }: ImageUpl
       const filename = `${branchId}/${timestamp}-${file.name.replace(/\s+/g, '_')}`;
 
       const { data, error } = await supabase.storage
-        .from('website-banners')
+        .from('banners')
         .upload(filename, file, { cacheControl: '3600', upsert: false });
 
       if (error) throw error;
 
       const { data: publicUrl } = supabase.storage
-        .from('website-banners')
+        .from('banners')
         .getPublicUrl(data.path);
 
       onChange(publicUrl.publicUrl);
@@ -80,60 +80,60 @@ export default function ImageUploadField({ value, onChange, branchId }: ImageUpl
     }
   };
 
-  return (
-    <div>
-      <label
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition ${
-          dragActive
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-        }`}
-      >
-        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-          <Upload className="w-8 h-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500 text-center">
-            <span className="font-semibold">Click to upload</span> or drag and drop
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            JPG, PNG, WebP (Max 5MB) • Recommended: 1200x400px
-          </p>
-        </div>
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleChange}
-          disabled={isUploading}
-          className="hidden"
-        />
-      </label>
+   return (
+     <div>
+       <label
+         onDragEnter={handleDrag}
+         onDragLeave={handleDrag}
+         onDragOver={handleDrag}
+         onDrop={handleDrop}
+         className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition ${
+           dragActive
+             ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/10'
+             : 'border-gray-300 dark:border-[#3a3a3a] bg-gray-50 dark:bg-[#111] hover:bg-gray-100 dark:hover:bg-[#2e2e2e}'
+         }`}
+       >
+         <div className="flex flex-col items-center justify-center pt-5 pb-6">
+           <Upload className="w-8 h-8 text-gray-400 dark:text-[#888] mb-2" />
+           <p className="text-sm text-gray-500 dark:text-[#888] text-center">
+             <span className="font-semibold">Click to upload</span> or drag and drop
+           </p>
+           <p className="text-xs text-gray-500 dark:text-[#888] mt-1">
+             JPG, PNG, WebP (Max 5MB) • Recommended: 1200x400px
+           </p>
+         </div>
+         <input
+           type="file"
+           accept="image/jpeg,image/png,image/webp"
+           onChange={handleChange}
+           disabled={isUploading}
+           className="hidden"
+         />
+       </label>
 
-      {value && (
-        <div className="mt-4">
-          <p className="text-sm font-medium mb-2">Preview:</p>
-          <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-            <Image
-              src={value}
-              alt="Banner preview"
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          </div>
-        </div>
-      )}
+       {value && (
+         <div className="mt-4">
+           <p className="text-sm font-medium mb-2 text-gray-500 dark:text-[#888]">Preview:</p>
+           <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900/10">
+             <Image
+               src={value}
+               alt="Banner preview"
+               fill
+               className="object-cover"
+               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+             />
+           </div>
+         </div>
+       )}
 
-      {isUploading && (
-        <div className="mt-2 text-center">
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-            <div className="bg-blue-600 h-2 rounded-full w-1/2 animate-pulse"></div>
-          </div>
-          <p className="text-xs text-gray-500">Uploading image...</p>
-        </div>
-      )}
-    </div>
-  );
+       {isUploading && (
+         <div className="mt-2 text-center">
+           <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 mb-1">
+             <div className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full w-1/2 animate-pulse"></div>
+           </div>
+           <p className="text-xs text-gray-500 dark:text-[#888]">Uploading image...</p>
+         </div>
+       )}
+     </div>
+   );
 }

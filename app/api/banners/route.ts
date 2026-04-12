@@ -62,37 +62,42 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const body = await req.json();
 
-    const { branch_id, title, description, image_url, image_alt_text, link_type, link_url, position, is_active, start_date, end_date, background_color, text_color, cta_button_text, cta_button_color, display_on_mobile } = body;
+    const { 
+      branch_id, title, image_url, description, cta_button_text, 
+      link_type, link_url, is_active, position, display_on_mobile,
+      background_color, text_color, cta_button_color, image_alt_text,
+      start_date, end_date
+    } = body;
 
-    if (!title || !image_url || !link_type || !link_url) {
+    if (!branch_id || !title || !image_url) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields (branch_id, title, image_url)' },
         { status: 400 }
       );
     }
 
+    const payload = {
+      branch_id,
+      title,
+      image_url,
+      description: description || null,
+      cta_button_text: cta_button_text || null,
+      link_type: link_type || null,
+      link_url: link_url || null,
+      is_active: is_active ?? true,
+      position: position || 0,
+      display_on_mobile: !!display_on_mobile,
+      background_color: background_color || null,
+      text_color: text_color || null,
+      cta_button_color: cta_button_color || null,
+      image_alt_text: image_alt_text || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+    };
+
     const { data, error } = await supabase
       .from('website_banners')
-      .insert([
-        {
-          branch_id,
-          title,
-          description,
-          image_url,
-          image_alt_text,
-          link_type,
-          link_url,
-          position,
-          is_active,
-          start_date,
-          end_date,
-          background_color,
-          text_color,
-          cta_button_text,
-          cta_button_color,
-          display_on_mobile,
-        },
-      ])
+      .insert([payload])
       .select();
 
     if (error) throw error;

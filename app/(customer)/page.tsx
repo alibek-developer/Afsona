@@ -2,7 +2,9 @@
 
 import { FeaturedDishes } from '@/components/customer/featured-dishes'
 import { HeroSection } from '@/components/customer/hero-section'
+import { CustomerFeatures } from '@/components/customer/customer-features'
 import { CheckCircle2, Download, Smartphone } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 // Next.js uchun "export default" bo'lishi shart
 export default function HomePage() {
@@ -16,6 +18,7 @@ export default function HomePage() {
 	return (
 		<main className='min-h-screen bg-white dark:bg-[#020617]'>
 			<HeroSection />
+			<CustomerFeatures />
 			<FeaturedDishes />
 
 			<section className='py-20 bg-white dark:bg-slate-950 relative overflow-hidden transition-colors duration-300'>
@@ -23,7 +26,13 @@ export default function HomePage() {
 				<div className='absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-red-50 dark:bg-red-950/20 rounded-full blur-3xl opacity-50' />
 				<div className='absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-slate-50 dark:bg-slate-900/30 rounded-full blur-3xl opacity-50' />
 
-				<div className='max-w-5xl mx-auto px-6 relative z-10'>
+				<motion.div 
+					initial={{ opacity: 0, y: 40 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					viewport={{ once: true, margin: "-100px" }}
+					transition={{ duration: 0.7 }}
+					className='max-w-5xl mx-auto px-6 relative z-10'
+				>
 					<div className='bg-slate-50 dark:bg-[#0f172a] rounded-[3rem] p-8 md:p-16 border border-slate-100 dark:border-slate-800 shadow-sm dark:shadow-[0_0_40px_rgba(239,68,68,0.1)] transition-all duration-300'>
 						<div className='grid grid-cols-1 lg:grid-cols-2 gap-12 items-center'>
 							{/* Matn qismi */}
@@ -62,18 +71,16 @@ export default function HomePage() {
 									))}
 								</div>
 
-								{/* Yuklab olish tugmasi - Skrinshotingizdagi Admin tugma uslubida */}
+								{/* Yuklab olish tugmasi */}
 								<div className='pt-4'>
 									<a
-										href='/app-release.apk'
-										download
+										href='#' // <-- Hozircha bo'sh link qoldirildi, keyinroq App Store / Play Market link qo'shasiz
 										className='
     group relative inline-flex items-center gap-5 
     bg-[#0f172a] dark:bg-slate-900 
     text-white px-8 py-5 rounded-2xl 
     transition-all duration-300 ease-out
     
-   
     hover:bg-red-600 hover:-translate-y-1 active:translate-y-0
     
     /* Sizning dizayningizdagi "Hard Shadow" effekti */
@@ -96,14 +103,13 @@ export default function HomePage() {
 										{/* Matn qismi */}
 										<div className='text-left'>
 											<p className='text-[10px] uppercase font-bold tracking-[0.2em] opacity-60 leading-none mb-1'>
-												Yuklab olish
+												Dasturni yuklab oling
 											</p>
 											<p className='text-xl font-black uppercase tracking-tight leading-none'>
-												Android APK
+												Play Market
 											</p>
 										</div>
 
-										{/* Download ikonasi animatsiyasi bilan */}
 										<Download
 											size={22}
 											className='ml-2 group-hover:translate-y-1 transition-transform'
@@ -114,31 +120,44 @@ export default function HomePage() {
 
 							{/* O'ng taraf - Telefon maketi */}
 							<div className='relative hidden lg:flex justify-center'>
-								<div className='w-64 h-[500px] bg-slate-900 dark:bg-slate-800 rounded-[3rem] border-[8px] border-slate-800 dark:border-slate-700 shadow-2xl relative overflow-hidden'>
-									<div className='absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 dark:bg-slate-700 rounded-b-2xl' />
+								<div className='w-64 h-[500px] bg-slate-900 dark:bg-slate-800 rounded-[3rem] border-[8px] border-slate-800 dark:border-slate-700 shadow-2xl relative overflow-hidden group'>
+									<div className='absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 dark:bg-slate-700 rounded-b-2xl z-20' />
 									<div className='p-4 pt-12 space-y-4'>
-										<div className='h-32 bg-red-600 rounded-2xl animate-pulse' />
-										<div className='space-y-2'>
-											<div className='h-4 bg-slate-700 rounded w-3/4' />
-											<div className='h-4 bg-slate-700 rounded w-1/2' />
+										<div className='h-32 bg-red-600 rounded-2xl flex items-center justify-center relative overflow-hidden'>
+											<div className='absolute inset-0 bg-red-500 animate-pulse opacity-50'></div>
+											<p className='text-white/90 font-black tracking-widest text-xl relative z-10'>AFSONA</p>
 										</div>
-										<div className='grid grid-cols-2 gap-2'>
-											<div className='h-20 bg-slate-800 rounded-xl border border-slate-700' />
-											<div className='h-20 bg-slate-800 rounded-xl border border-slate-700' />
+										<div className='space-y-2 pt-2'>
+											<div className='h-3 bg-slate-700 rounded w-3/4' />
+											<div className='h-3 bg-slate-700 rounded w-1/2' />
+										</div>
+										<div className='grid grid-cols-2 gap-2 mt-4'>
+											<div className='h-24 bg-slate-800 rounded-xl border border-slate-700 flex flex-col justify-end p-2 gap-1 group-hover:bg-slate-700 transition-colors'>
+												<div className='w-full h-8 bg-slate-700 rounded-lg'></div>
+												<div className='w-2/3 h-2 bg-slate-600 rounded-full'></div>
+											</div>
+											<div className='h-24 bg-slate-800 rounded-xl border border-slate-700 flex flex-col justify-end p-2 gap-1 group-hover:bg-slate-700 transition-colors'>
+												<div className='w-full h-8 bg-slate-700 rounded-lg'></div>
+												<div className='w-2/3 h-2 bg-slate-600 rounded-full'></div>
+											</div>
 										</div>
 									</div>
-									<div className='absolute bottom-6 left-4 right-4 h-12 bg-red-600 rounded-xl flex items-center justify-center font-black text-white text-xs uppercase'>
+									<div className='absolute bottom-6 left-4 right-4 h-12 bg-red-600 rounded-xl flex items-center justify-center font-black text-white text-xs uppercase cursor-pointer hover:bg-red-500 transition-colors transform hover:-translate-y-1'>
 										Buyurtma berish
 									</div>
 								</div>
 								{/* Promo Badge */}
-								<div className='absolute -bottom-6 -right-6 w-32 h-32 bg-red-600 rounded-3xl -z-10 rotate-12 flex items-center justify-center text-white font-black text-2xl shadow-xl border-4 border-white dark:border-slate-900'>
+								<motion.div 
+									animate={{ rotate: [12, -5, 12] }}
+									transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+									className='absolute -bottom-6 -right-6 w-32 h-32 bg-red-600 rounded-3xl -z-10 flex items-center justify-center text-white font-black text-3xl shadow-xl border-4 border-white dark:border-slate-900 shadow-red-500/20'
+								>
 									-20%
-								</div>
+								</motion.div>
 							</div>
 						</div>
 					</div>
-				</div>
+				</motion.div>
 			</section>
 		</main>
 	)

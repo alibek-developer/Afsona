@@ -82,122 +82,140 @@ export default function LoginPage() {
 	const isDark = resolvedTheme === 'dark'
 
 	return (
-		<div className='min-h-screen flex items-center justify-center bg-[#F1F5F9] dark:bg-slate-950 font-sans antialiased p-4 transition-colors duration-300 relative'>
-			{/* Orqa fon animatsiyalari (Mavzuga moslangan) */}
-			<div className='absolute inset-0 overflow-hidden pointer-events-none'>
-				<div
-					className={`absolute top-20 right-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob ${isDark ? 'bg-red-900' : 'bg-red-100'}`}
-				></div>
-				<div
-					className={`absolute bottom-20 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}
-				></div>
+		<div className='min-h-screen flex bg-white dark:bg-slate-950 transition-colors duration-300'>
+			{/* LEFT AREA: Brand / Welcome */}
+			<div className='hidden lg:flex lg:w-[45%] bg-[#0f172a] dark:bg-[#020617] p-16 flex-col justify-between relative overflow-hidden'>
+                {/* Decorative blob */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-slate-400/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2"></div>
+
+				<div className="relative z-10">
+                    <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-red-600/20 mb-12">
+                        <Utensils size={32} className="text-white" />
+                    </div>
+					<h1 className='text-6xl font-black text-white tracking-tighter mb-8 leading-[0.9]'>
+						Xush kelibsiz,<br/>hamkor!
+					</h1>
+					<p className='text-slate-400 text-lg font-medium max-w-md leading-relaxed'>
+						Afsona boshqaruv tizimiga xush kelibsiz. Ishni davom ettirish uchun bo'limni tanlang va tizimga kiring.
+					</p>
+
+                    <div className="flex gap-4 mt-16">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span className="text-xs font-black text-white tracking-widest uppercase">Oshxona</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 opacity-50">
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span className="text-xs font-black text-white tracking-widest uppercase">Call-center</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 opacity-50">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <span className="text-xs font-black text-white tracking-widest uppercase">Admin</span>
+                        </div>
+                    </div>
+				</div>
+
+				<div className='relative z-10 text-[10px] font-black text-slate-500 tracking-[0.4em] uppercase'>
+					EST. 2024 • SILK ROAD SYSTEMS
+				</div>
 			</div>
 
-			<Card className='w-full max-w-[440px] border-none shadow-2xl dark:shadow-[0_0_50px_rgba(239,68,68,0.2)] shadow-slate-200/60 rounded-[2.5rem] bg-white dark:bg-slate-900 overflow-hidden p-4 relative z-10 transition-colors'>
-				<CardHeader className='space-y-4 pb-8 text-center relative'>
-					{/* TEPADAGI TUGMA ENDI GLOBAL MAVZUNI O'ZGARTIRADI */}
-					<button
-						type='button'
-						onClick={toggleDarkMode}
-						className='absolute top-0 right-0 p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
-					>
-						{isDark ? (
-							<Sun className='w-5 h-5 text-yellow-500' />
-						) : (
-							<Moon className='w-5 h-5 text-slate-700' />
-						)}
-					</button>
+			{/* RIGHT AREA: Login Form */}
+			<div className='flex-1 flex flex-col justify-center items-center p-8 relative'>
+                {/* Theme Toggle */}
+                <button
+                    type='button'
+                    onClick={toggleDarkMode}
+                    className='absolute top-8 right-8 p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95'
+                >
+                    {isDark ? (
+                        <Sun className='w-5 h-5 text-yellow-500' />
+                    ) : (
+                        <Moon className='w-5 h-5 text-slate-700' />
+                    )}
+                </button>
 
-					<div className='mx-auto w-16 h-16 bg-red-500 dark:bg-red-600 rounded-3xl flex items-center justify-center shadow-lg shadow-red-200 dark:shadow-[0_0_25px_rgba(239,68,68,0.5)] text-white mb-2 transition-all'>
-						<Utensils size={32} />
-					</div>
-					<CardTitle className='text-3xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
-						Tizimga Kirish
-					</CardTitle>
-					<CardDescription className='text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]'>
-						Restoran Boshqaruv Platformasi
-					</CardDescription>
-				</CardHeader>
+                <div className="w-full max-w-sm space-y-10">
+                    <div className="space-y-3">
+                        <h2 className='text-4xl font-black text-slate-900 dark:text-white tracking-tight'>
+                            Tizimga kirish
+                        </h2>
+                        <p className='text-slate-500 dark:text-slate-400 font-medium'>
+                            Hisobingizga kiring
+                        </p>
+                    </div>
 
-				<CardContent>
-					<form onSubmit={handleLogin} className='space-y-6'>
-						{error && (
-							<Alert
-								variant='destructive'
-								className='rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 font-bold'
-							>
-								<AlertDescription>{error}</AlertDescription>
-							</Alert>
-						)}
+                    <form onSubmit={handleLogin} className='space-y-6'>
+                        {error && (
+                            <div className='p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-2'>
+                                <AlertDescription>{error}</AlertDescription>
+                            </div>
+                        )}
 
-						<div className='space-y-2'>
-							<Label
-								htmlFor='email'
-								className='text-xs font-black text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest'
-							>
-								Elektron pochta
-							</Label>
-							<div className='relative group'>
-								<Mail
-									className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 group-focus-within:text-red-500 transition-colors'
-									size={20}
-								/>
-								<Input
-									id='email'
-									type='email'
-									placeholder='admin@example.com'
-									className='h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-800 dark:text-white border-transparent dark:border-slate-700 focus:border-red-500 font-bold transition-all'
-									value={email}
-									onChange={e => setEmail(e.target.value)}
-									required
-								/>
-							</div>
-						</div>
+                        <div className="space-y-5">
+                            <div className='space-y-2.5'>
+                                <Label className='text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1'>
+                                    Elektron pochta
+                                </Label>
+                                <div className='relative group'>
+                                    <Mail className='absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors' size={18} />
+                                    <Input
+                                        type='email'
+                                        placeholder='example@afsona.uz'
+                                        className='h-14 pl-14 pr-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none focus-visible:ring-2 focus-visible:ring-red-500 font-bold transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700'
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
 
-						<div className='space-y-2'>
-							<Label
-								htmlFor='password'
-								className='text-xs font-black text-slate-400 dark:text-slate-500 uppercase ml-1 tracking-widest'
-							>
-								Parol
-							</Label>
-							<div className='relative group'>
-								<LockKeyhole
-									className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 group-focus-within:text-red-500 transition-colors'
-									size={20}
-								/>
-								<Input
-									id='password'
-									type='password'
-									placeholder='••••••••'
-									className='h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-800 dark:text-white border-transparent dark:border-slate-700 focus:border-red-500 font-bold transition-all'
-									value={password}
-									onChange={e => setPassword(e.target.value)}
-									required
-								/>
-							</div>
-						</div>
+                            <div className='space-y-2.5'>
+                                <Label className='text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1'>
+                                    Parol
+                                </Label>
+                                <div className='relative group'>
+                                    <LockKeyhole className='absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors' size={18} />
+                                    <Input
+                                        type='password'
+                                        placeholder='••••••••'
+                                        className='h-14 pl-14 pr-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none focus-visible:ring-2 focus-visible:ring-red-500 font-bold transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700'
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-						<Button
-							type='submit'
-							className='w-full h-16 bg-slate-900 dark:bg-red-600 hover:bg-slate-800 dark:hover:bg-red-700 text-white rounded-2xl text-lg font-black shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 border-2 border-slate-900 dark:border-red-500'
-							disabled={loading}
-						>
-							{loading ? (
-								<Loader2 className='h-6 w-6 animate-spin' />
-							) : (
-								'KIRISH'
-							)}
-						</Button>
-					</form>
 
-					<div className='mt-8 text-center'>
-						<p className='text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest'>
-							Xavfsiz ulanish yoqilgan
-						</p>
-					</div>
-				</CardContent>
-			</Card>
+
+                        <Button
+                            type='submit'
+                            className='w-full h-16 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-base font-black tracking-widest uppercase shadow-lg shadow-red-600/20 active:scale-95 transition-all flex items-center justify-center gap-3'
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <Loader2 className='h-6 w-6 animate-spin' />
+                            ) : (
+                                <>KIRISH <span className="text-xl">→</span></>
+                            )}
+                        </Button>
+                    </form>
+
+                    <div className='text-center space-y-6'>
+                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            Xavfsiz ulanish yoqilgan
+                        </div>
+
+                        <p className='text-[10px] font-semibold text-slate-400 dark:text-slate-500 leading-relaxed max-w-[280px] mx-auto uppercase tracking-tighter'>
+                            Ushbu panel faqat AFSONA xodimlari uchun mo'ljallangan. Tizimdan ruxsatsiz foydalanish qat'iyan taqiqlanadi.
+                        </p>
+                    </div>
+                </div>
+			</div>
 		</div>
 	)
 }

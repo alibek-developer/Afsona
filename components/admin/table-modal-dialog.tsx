@@ -120,7 +120,7 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
     <Dialog open={isOpen} onOpenChange={onClose}>
       {/* [&>button]:hidden klassi Shadcn ning standart X tugmasini ham yashirishi mumkin edi, 
           lekin bizga bittasi kerak bo'lgani uchun uni qoldirdik va o'zimiznikini o'chirdik */}
-      <DialogContent className="max-w-lg bg-[#0B1220] border-border text-foreground p-0 overflow-hidden rounded-3xl shadow-2xl">
+      <DialogContent className="max-w-lg bg-white dark:bg-[#0B1220] border-border text-slate-900 dark:text-foreground p-0 overflow-hidden rounded-3xl shadow-2xl">
         <DialogTitle className="sr-only">Xona Boshqaruvi</DialogTitle>
         
         <div className="p-6 space-y-4">
@@ -131,7 +131,7 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
                  </div>
                  <div>
                      <h2 className="text-lg font-black uppercase tracking-tight italic">
-                        {data ? 'Tahrirlash' : 'Yangi Xona'}
+                        {data ? 'Tahrirlash' : `Yangi ${formData.capacity && Number(formData.capacity) <= 4 ? 'Stol' : 'Xona'}`}
                      </h2>
                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Luxury Control</p>
                  </div>
@@ -139,9 +139,52 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Tur (Type) Toggle (Visual Only) */}
+            <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Turini tanlang</Label>
+                <div className="flex p-1 bg-slate-100 dark:bg-[#111827] rounded-xl border border-border">
+                    <button
+                        type="button"
+                        onClick={() => {
+                          if (!formData.capacity || Number(formData.capacity) <= 4) {
+                            setFormData({ ...formData, capacity: '6' }) // default xona sig'imi
+                          }
+                        }}
+                        className={cn(
+                            "flex-1 h-9 rounded-lg font-black text-xs uppercase tracking-wider transition-all",
+                            (!formData.capacity || Number(formData.capacity) > 4)
+                                ? "bg-red-500 text-white shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Xona
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                           if (!formData.capacity || Number(formData.capacity) > 4) {
+                             setFormData({ ...formData, capacity: '4' }) // default stol sig'imi
+                           }
+                        }}
+                        className={cn(
+                            "flex-1 h-9 rounded-lg font-black text-xs uppercase tracking-wider transition-all",
+                            (formData.capacity && Number(formData.capacity) <= 4)
+                                ? "bg-red-500 text-white shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Stol
+                    </button>
+                </div>
+                <p className="text-[9px] text-muted-foreground ml-1">
+                  Mantiq: Sig'imi 4 va undan kam bo'lsa - "Stol", katta bo'lsa - "Xona" deb olinadi.
+                </p>
+            </div>
             {/* Compact Image Upload */}
             <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Xona Rasmi</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  {formData.capacity && Number(formData.capacity) <= 4 ? 'Stol Rasmi' : 'Xona Rasmi'}
+                </Label>
                 <div 
                   className={cn(
                     "relative h-28 w-full rounded-2xl border-2 border-dashed transition-all flex items-center justify-center overflow-hidden",
@@ -172,12 +215,14 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
             {/* Row: Xona Nomi | Sig'imi */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Xona Nomi</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                      {formData.capacity && Number(formData.capacity) <= 4 ? 'Stol Nomi' : 'Xona Nomi'}
+                    </Label>
                     <Input 
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
-                        placeholder="VIP Sultan" 
-                        className="bg-[#111827] border-border h-11 rounded-xl focus-visible:ring-red-500/20 font-bold text-sm"
+                        placeholder={formData.capacity && Number(formData.capacity) <= 4 ? 'Stol #1' : 'VIP Sultan'} 
+                        className="bg-slate-50 dark:bg-[#111827] border-border h-11 rounded-xl focus-visible:ring-red-500/20 font-bold text-sm text-slate-900 dark:text-white"
                     />
                 </div>
                 <div className="space-y-1.5">
@@ -187,7 +232,7 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
                         value={formData.capacity} 
                         onChange={e => setFormData({...formData, capacity: e.target.value})}
                         placeholder="10"
-                        className="bg-[#111827] border-border h-11 rounded-xl font-bold text-sm"
+                        className="bg-slate-50 dark:bg-[#111827] border-border h-11 rounded-xl font-bold text-sm text-slate-900 dark:text-white"
                     />
                 </div>
             </div>
@@ -195,7 +240,7 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
             {/* Qavat tanlash - Compact */}
             <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Qavat</Label>
-                <div className="flex p-1 bg-[#111827] rounded-xl border border-border">
+                <div className="flex p-1 bg-slate-100 dark:bg-[#111827] rounded-xl border border-border">
                     {FLOORS.map((floor) => (
                         <button
                             key={floor}
@@ -215,7 +260,7 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
             </div>
 
             {/* Xizmat haqi - Compact Info */}
-            <div className="flex items-center justify-between px-3 py-2 bg-red-500/5 rounded-xl border border-red-500/20">
+            <div className="flex items-center justify-between px-3 py-2 bg-red-500/5 rounded-xl border border-red-500/10">
                 <div className="flex items-center gap-2">
                     <span className="text-base">💼</span>
                     <p className="text-[11px] font-black uppercase text-muted-foreground">Xizmat haqi</p>

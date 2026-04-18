@@ -37,7 +37,8 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
     capacity: '',
     image_url: '',
     is_available: true,
-    floor: '1-qavat' as typeof FLOORS[number]
+    floor: '1-qavat' as typeof FLOORS[number],
+    type: 'xona' as 'xona' | 'stol'
   })
 
   useEffect(() => {
@@ -47,7 +48,8 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
         capacity: data.capacity?.toString() || '',
         image_url: data.image_url || '',
         is_available: data.is_available ?? true,
-        floor: (data.floor as typeof FLOORS[number]) || '1-qavat'
+        floor: (data.floor as typeof FLOORS[number]) || '1-qavat',
+        type: Number(data.capacity) <= 4 ? 'stol' : 'xona'
       })
     } else {
       setFormData({ 
@@ -55,7 +57,8 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
         capacity: '', 
         image_url: '', 
         is_available: true,
-        floor: '1-qavat'
+        floor: '1-qavat',
+        type: 'xona'
       })
     }
   }, [data, isOpen])
@@ -98,7 +101,8 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
     const finalData = {
       ...formData,
       capacity: parseInt(formData.capacity.toString()) || 0,
-      price_per_hour: 0  // Set to 0 as per new business logic (no hourly rate)
+      price_per_hour: 0,
+      type: Number(formData.capacity) <= 4 ? 'stol' : 'xona'
     }
 
     try {
@@ -146,13 +150,11 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
                     <button
                         type="button"
                         onClick={() => {
-                          if (!formData.capacity || Number(formData.capacity) <= 4) {
-                            setFormData({ ...formData, capacity: '6' }) // default xona sig'imi
-                          }
+                          setFormData({ ...formData, capacity: '6', type: 'xona' })
                         }}
                         className={cn(
                             "flex-1 h-9 rounded-lg font-black text-xs uppercase tracking-wider transition-all",
-                            (!formData.capacity || Number(formData.capacity) > 4)
+                            formData.type === 'xona'
                                 ? "bg-red-500 text-white shadow-sm"
                                 : "text-muted-foreground hover:text-foreground"
                         )}
@@ -162,13 +164,11 @@ export default function TableManagerModal({ isOpen, onClose, onSuccess, data }: 
                     <button
                         type="button"
                         onClick={() => {
-                           if (!formData.capacity || Number(formData.capacity) > 4) {
-                             setFormData({ ...formData, capacity: '4' }) // default stol sig'imi
-                           }
+                          setFormData({ ...formData, capacity: '4', type: 'stol' })
                         }}
                         className={cn(
                             "flex-1 h-9 rounded-lg font-black text-xs uppercase tracking-wider transition-all",
-                            (formData.capacity && Number(formData.capacity) <= 4)
+                            formData.type === 'stol'
                                 ? "bg-red-500 text-white shadow-sm"
                                 : "text-muted-foreground hover:text-foreground"
                         )}

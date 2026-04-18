@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Clock, Bell, User, ChevronLeft, ChevronRight, ChevronDown, X, Phone, Sun, Moon, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { toast, Toaster } from 'react-hot-toast';
+import { useTheme } from 'next-themes';
 
 // Order interface for real-time status
 interface Order {
@@ -26,6 +27,7 @@ interface TableItem {
   is_available: boolean;
   image_url: string;
   floor: string;
+  type?: string;
   active_order?: Order | null;
 }
 
@@ -74,6 +76,22 @@ export default function RestaurantReservation() {
     phone: '',
     comment: ''
   });
+  const [seatingFilter, setSeatingFilter] = useState<'all' | 'xona' | 'stol'>('all');
+  
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
+  const t = {
+    pageBg:    isDark ? '#0f0f0f' : '#f7f7f7',
+    cardBg:    isDark ? '#181818' : '#ffffff',
+    mutedBg:   isDark ? '#1a1a1a' : '#f1f2f4',
+    inputBg:   isDark ? '#222222' : '#f1f2f4',
+    text:      isDark ? '#ffffff' : '#111111',
+    textMuted: isDark ? '#aaaaaa' : '#666666',
+    border:    isDark ? '#2a2a2a' : '#e5e5e5',
+    floorActive: isDark ? '#ffffff' : '#1e1e1e',
+    floorActiveTxt: isDark ? '#000000' : '#ffffff',
+  };
 
 
 
@@ -246,8 +264,17 @@ export default function RestaurantReservation() {
   };
 
   const getFilteredTables = (tables: TableItem[]): TableItem[] => {
-    if (!showAvailableOnly) return tables;
-    return tables.filter((table: TableItem) => table.is_available && !isVenueBooked(table.id));
+    let list = tables;
+    if (showAvailableOnly) {
+      list = list.filter((table: TableItem) => table.is_available && !isVenueBooked(table.id));
+    }
+    if (seatingFilter !== 'all') {
+      list = list.filter((item: TableItem) => {
+        const type = item.type === 'xona' || (item.capacity > 4 && !item.type) ? 'xona' : 'stol';
+        return type === seatingFilter;
+      });
+    }
+    return list;
   };
 
   const renderTableIcon = (isOccupied: boolean, isSelected: boolean, isVIP: boolean, capacity: number) => {
@@ -313,59 +340,65 @@ export default function RestaurantReservation() {
   const TableItemCard = ({ item }: { item: TableItem }) => {
     const isSelected = selectedSeating?.id === item.id;
     const isOccupied = !item.is_available || isVenueBooked(item.id);
-    const isVIP = item.name.toLowerCase().includes('vip') || item.floor.includes('VIP');
+    const isVIP = item.name.toLowerCase().includes('vip') || (item.floor && item.floor.includes('VIP'));
+    const isRoom = item.type === 'xona' || (item.capacity > 4 && !item.type);
+
+    const roomBg = isSelected ? (isDark ? 'rgba(220,38,38,0.1)' : 'rgba(254,242,242,0.8)') : t.mutedBg;
+    const roomBorder = isSelected ? '#dc2626' : 'transparent';
 
     return (
       <button
-        onClick={() => handleSeatingClick(item, item.capacity <= 4 ? 'table' : 'room')}
+        onClick={() => handleSeatingClick(item, isRoom ? 'room' : 'table')}
         disabled={isOccupied}
-        className={`relative w-full py-6 px-2 rounded-[24px] border-2 transition-all flex flex-col items-center justify-center focus:outline-none
-          ${isSelected ? 'border-red-600 bg-red-50/50' : 'border-transparent bg-[#f9fafb] hover:bg-gray-100 hover:scale-105 active:scale-95'}
-          ${isOccupied && !isSelected ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+        className={`relative w-full py-8 px-2 transition-all flex flex-col items-center justify-center focus:outline-none
+          ${isRoom ? 'rounded-[32px] border-2' : `border-2 ${isSelected ? 'rounded-2xl' : ''}`}
+          ${isOccupied && !isSelected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
         `}
+        style={isRoom
+          ? { borderColor: roomBorder, background: roomBg }
+          : { borderColor: isSelected ? '#dc2626' : 'transparent', background: 'transparent' }
+        }
       >
-        {renderTableIcon(isOccupied, isSelected, isVIP, item.capacity)}
-        
-        {/* At the bottom overlapping the table */}
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[8px] z-20 ${isSelected ? 'bg-red-600' : isOccupied ? 'bg-red-400/90' : isVIP ? 'bg-[#986A2E]' : 'bg-[#D2A679]'} min-w-[50px] px-2 py-1 rounded-md text-white font-black text-[11px] shadow-md truncate max-w-[80px]`}>
-           {item.name}
+        <div className="relative">
+            {renderTableIcon(isOccupied, isSelected, isVIP, item.capacity)}
+            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[10px] z-20 ${isSelected ? 'bg-red-600' : isOccupied ? 'bg-red-400/90' : isVIP ? 'bg-[#986A2E]' : 'bg-[#D2A679]'} min-w-[54px] px-2 py-1 rounded-lg text-white font-black text-[10px] shadow-lg truncate max-w-[90px] border border-white/20`}>
+               {item.name}
+            </div>
         </div>
 
-        <div className="mt-4 text-center">
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-red-600' : 'text-slate-800'}`}>
+        <div className="mt-6 text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{color: isSelected ? '#dc2626' : t.text}}>
                 {isSelected ? 'Tanlandi' : isOccupied ? 'Band' : "Bo'sh"}
             </p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{item.capacity} kishi</p>
+            <p className="text-[10px] font-bold mt-1" style={{color: t.textMuted}}>{item.capacity} kishi</p>
         </div>
       </button>
     );
   };
-
-  // Extract unique floors
   const activeFloors = Array.from(new Set(tables.map(t => t.floor))).sort();
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-slate-900 pb-20">
+    <div className="min-h-screen pb-20 transition-colors duration-300" style={{background: t.pageBg}}>
       <Toaster position="top-center" />
 
       {/* Header Area */}
-      <div className="bg-white pt-16 pb-12 w-full text-center relative shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-100/60 font-black text-[120px] tracking-[0.2em] uppercase select-none pointer-events-none whitespace-nowrap overflow-hidden hidden md:block">
+      <div className="pt-16 pb-12 w-full text-center relative border-b" style={{background: t.cardBg, borderColor: t.border}}>
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[120px] tracking-[0.2em] uppercase select-none pointer-events-none whitespace-nowrap overflow-hidden hidden md:block opacity-5" style={{color: t.text}}>
             RESERVATION
          </div>
          <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
-             <h1 className="text-5xl md:text-[56px] font-black tracking-tighter uppercase text-slate-900 mb-4">Stol Band Qilish</h1>
-             <p className="text-slate-500 font-medium md:text-lg">Kerakli sana, vaqt va xonani tanlang</p>
+             <h1 className="text-5xl md:text-[56px] font-black tracking-tighter uppercase mb-4" style={{color: t.text}}>Stol Band Qilish</h1>
+             <p className="font-medium md:text-lg" style={{color: t.textMuted}}>Kerakli sana, vaqt va xonani tanlang</p>
              
              <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold">
-                    <span className="w-2 h-2 rounded-full bg-green-500" /> Bepul bron
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest" style={{background: isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5', color: isDark ? '#6ee7b7' : '#065f46'}}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Bepul bron
                 </span>
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold">
-                    <span className="w-2 h-2 rounded-full bg-green-500" /> Bekor qilish mumkin
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest" style={{background: isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5', color: isDark ? '#6ee7b7' : '#065f46'}}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Bekor qilish mumkin
                 </span>
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold">
-                    <span className="w-2 h-2 rounded-full bg-green-500" /> Darhol tasdiqlash
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest" style={{background: isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5', color: isDark ? '#6ee7b7' : '#065f46'}}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Darhol tasdiqlash
                 </span>
              </div>
          </div>
@@ -374,19 +407,18 @@ export default function RestaurantReservation() {
       {/* Progress Steps */}
       <div className="w-full max-w-4xl mx-auto px-4 py-12">
           <div className="flex items-center justify-between relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -z-10 -translate-y-1/2" />
-              
-              <div className="flex flex-col items-center gap-3 bg-[#f3f4f6] px-4">
-                  <div className="w-8 h-8 rounded-full bg-red-600 text-white font-bold flex items-center justify-center shadow-[0_0_0_4px_#f3f4f6]">1</div>
+              <div className="absolute top-1/2 left-0 w-full h-0.5 -z-10 -translate-y-1/2" style={{background: t.border}} />
+              <div className="flex flex-col items-center gap-3 px-4" style={{background: t.pageBg}}>
+                  <div className="w-8 h-8 rounded-full bg-red-600 text-white font-bold flex items-center justify-center">1</div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-red-600">Sana va Vaqt</span>
               </div>
-              <div className="flex flex-col items-center gap-3 bg-[#f3f4f6] px-4">
-                  <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center shadow-[0_0_0_4px_#f3f4f6] ${selectedSeating ? 'bg-red-600 text-white' : 'bg-red-600 text-white'}`}>2</div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${selectedSeating ? 'text-red-600' : 'text-red-600'}`}>Xona va Stol</span>
+              <div className="flex flex-col items-center gap-3 px-4" style={{background: t.pageBg}}>
+                  <div className="w-8 h-8 rounded-full bg-red-600 text-white font-bold flex items-center justify-center">2</div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-600">Xona va Stol</span>
               </div>
-              <div className="flex flex-col items-center gap-3 bg-[#f3f4f6] px-4">
-                  <div className={`w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center shadow-[0_0_0_4px_#f3f4f6]`}>3</div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest text-slate-500`}>Tasdiqlash</span>
+              <div className="flex flex-col items-center gap-3 px-4" style={{background: t.pageBg}}>
+                  <div className="w-8 h-8 rounded-full font-bold flex items-center justify-center" style={{background: t.mutedBg, color: t.textMuted}}>3</div>
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{color: t.textMuted}}>Tasdiqlash</span>
               </div>
           </div>
       </div>
@@ -397,133 +429,111 @@ export default function RestaurantReservation() {
          <div className="col-span-1 lg:col-span-4 space-y-6">
             
             {/* Box 1: VAQTNI BELGILASH */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100">
-               <h3 className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-slate-800 mb-6">
+            <div className="rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border" style={{background: t.cardBg, borderColor: t.border}}>
+               <h3 className="flex items-center gap-3 text-sm font-black uppercase tracking-widest mb-6" style={{color: t.text}}>
                   <Calendar className="w-5 h-5 text-red-600" />
                   1. Vaqtni Belgilash
                </h3>
-
                <div className="space-y-5">
                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sana</label>
-                       <input 
-                          type="date" 
-                          value={selectedDateStr}
-                          onChange={(e) => {
-                             setSelectedDateStr(e.target.value);
-                             setSelectedDate(new Date(e.target.value).getDate());
-                          }}
-                          className="w-full bg-[#f1f2f4] border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20 text-slate-800"
-                       />
+                       <label className="text-[10px] font-black uppercase tracking-widest" style={{color: t.textMuted}}>Sana</label>
+                       <input type="date" value={selectedDateStr}
+                          onChange={(e) => { setSelectedDateStr(e.target.value); setSelectedDate(new Date(e.target.value).getDate()); }}
+                          className="w-full border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none"
+                          style={{background: t.inputBg, color: t.text}} />
                    </div>
-
                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Vaqt</label>
-                       <select 
-                          value={selectedTime}
-                          onChange={(e) => setSelectedTime(e.target.value)}
-                          className="w-full bg-[#f1f2f4] border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20 text-slate-800 cursor-pointer"
-                       >
-                          {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                       <label className="text-[10px] font-black uppercase tracking-widest" style={{color: t.textMuted}}>Vaqt</label>
+                       <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}
+                          className="w-full border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none cursor-pointer"
+                          style={{background: t.inputBg, color: t.text}}>
+                          {TIME_SLOTS.map(slot => <option key={slot} value={slot}>{slot}</option>)}
                        </select>
                    </div>
-
                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mehmonlar Soni</label>
-                       <div className="flex items-center justify-between bg-[#f1f2f4] rounded-xl px-2 py-1.5 h-12">
-                           <button onClick={() => setGuestCount(Math.max(1, guestCount - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-red-500 font-bold hover:bg-slate-50 transition-colors">
-                             -
-                           </button>
-                           <span className="font-black text-slate-800">{guestCount}</span>
-                           <button onClick={() => setGuestCount(guestCount + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-red-500 font-bold hover:bg-slate-50 transition-colors">
-                             +
-                           </button>
+                       <label className="text-[10px] font-black uppercase tracking-widest" style={{color: t.textMuted}}>Mehmonlar Soni</label>
+                       <div className="flex items-center justify-between rounded-xl px-2 py-1.5 h-12" style={{background: t.inputBg}}>
+                           <button onClick={() => setGuestCount(Math.max(1, guestCount - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg shadow-sm text-red-500 font-bold" style={{background: t.cardBg}}>-</button>
+                           <span className="font-black" style={{color: t.text}}>{guestCount}</span>
+                           <button onClick={() => setGuestCount(guestCount + 1)} className="w-8 h-8 flex items-center justify-center rounded-lg shadow-sm text-red-500 font-bold" style={{background: t.cardBg}}>+</button>
                        </div>
                    </div>
                </div>
             </div>
 
             {/* Box 3: MA'LUMOTLAR */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100">
-               <h3 className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-slate-800 mb-6">
+            <div className="rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border" style={{background: t.cardBg, borderColor: t.border}}>
+               <h3 className="flex items-center gap-3 text-sm font-black uppercase tracking-widest mb-6" style={{color: t.text}}>
                   <User className="w-5 h-5 text-red-600" />
                   3. Ma'lumotlar
                </h3>
-
-               <div className="bg-red-50/50 rounded-xl p-4 mb-5 border border-red-100">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">Tanlangan vaqt:</p>
-                  <p className="text-sm font-black text-slate-900">{selectedDateStr}, {selectedTime}</p>
+               <div className="rounded-xl p-4 mb-5 border border-red-500/20" style={{background: isDark ? 'rgba(220,38,38,0.08)' : 'rgba(254,242,242,0.8)'}}>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Tanlangan vaqt:</p>
+                  <p className="text-sm font-black" style={{color: t.text}}>{selectedDateStr}, {selectedTime}</p>
                </div>
-
                <form onSubmit={submitBooking} className="space-y-4">
-                   <input 
-                      type="text" 
-                      placeholder="Ismingiz" 
-                      value={bookingForm.customerName}
-                      onChange={e => setBookingForm({...bookingForm, customerName: e.target.value})}
-                      required
-                      className="w-full bg-[#f1f2f4] border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20 placeholder:text-slate-400"
-                   />
+                   <input type="text" placeholder="Ismingiz" value={bookingForm.customerName}
+                      onChange={e => setBookingForm({...bookingForm, customerName: e.target.value})} required
+                      className="w-full border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none"
+                      style={{background: t.inputBg, color: t.text}} />
                    <div className="relative">
-                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-bold text-sm">+998</span>
-                       <input 
-                          type="tel" 
-                          placeholder="Telefon raqam" 
-                          value={bookingForm.phone}
-                          onChange={e => setBookingForm({...bookingForm, phone: e.target.value.replace(/\D/g, '').substring(0,9) })}
-                          required
-                          className="w-full bg-[#f1f2f4] border-none rounded-xl pl-16 pr-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20 placeholder:text-slate-400"
-                       />
+                       <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm" style={{color: t.textMuted}}>+998</span>
+                       <input type="tel" placeholder="Telefon raqam" value={bookingForm.phone}
+                          onChange={e => setBookingForm({...bookingForm, phone: e.target.value.replace(/\D/g, '').substring(0,9)})}
+                          required className="w-full border-none rounded-xl pl-16 pr-4 py-3.5 text-sm font-semibold outline-none"
+                          style={{background: t.inputBg, color: t.text}} />
                    </div>
-                   <textarea 
-                      placeholder="Qo'shimcha izohlar (ixtiyoriy)" 
-                      value={bookingForm.comment}
-                      onChange={e => setBookingForm({...bookingForm, comment: e.target.value})}
-                      rows={3}
-                      className="w-full bg-[#f1f2f4] border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500/20 resize-none placeholder:text-slate-400"
-                   />
-
-                   <button 
-                      type="submit"
-                      disabled={isSubmitting || !selectedSeating}
-                      className="w-full mt-2 bg-red-700 hover:bg-red-800 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                   >
+                   <textarea placeholder="Qo'shimcha izohlar (ixtiyoriy)" value={bookingForm.comment}
+                      onChange={e => setBookingForm({...bookingForm, comment: e.target.value})} rows={3}
+                      className="w-full border-none rounded-xl px-4 py-3.5 text-sm font-semibold outline-none resize-none"
+                      style={{background: t.inputBg, color: t.text}} />
+                   <button type="submit" disabled={isSubmitting || !selectedSeating}
+                      className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                       {isSubmitting ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : 'Bronni Tasdiqlash'}
                    </button>
-                   {!selectedSeating && (
-                       <p className="text-[10px] text-red-500 font-bold text-center mt-2">Bron qilish uchun avval xona/stolni tanlang</p>
-                   )}
+                   {!selectedSeating && <p className="text-[10px] text-red-500 font-bold text-center mt-2">Bron qilish uchun avval xona/stolni tanlang</p>}
                </form>
             </div>
          </div>
 
          {/* RIGHT AREA (TABLE MAP) */}
          <div className="col-span-1 lg:col-span-8">
-            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 min-h-full">
+            <div className="rounded-3xl p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border min-h-full" style={{background: t.cardBg, borderColor: t.border}}>
                 
                 {/* Header & Tabs */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <h3 className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-slate-800">
-                        <span className="w-5 h-5 rounded flex items-center justify-center bg-red-100"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z'/%3E%3Cpath d='m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9'/%3E%3Cpath d='M12 3v6'/%3E%3C/svg%3E" className="w-3.5 h-3.5" /></span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest" style={{color: t.text}}>
+                        <span className="w-5 h-5 rounded flex items-center justify-center" style={{background: isDark ? 'rgba(220,38,38,0.2)' : '#fee2e2'}}>
+                          <Calendar className="w-3 h-3 text-red-600" />
+                        </span>
                         2. Xona va Stollar
                     </h3>
 
-                    <div className="flex bg-[#f1f2f4] p-1 rounded-full overflow-x-auto w-full md:w-auto hide-scrollbar">
-                        {activeFloors.length > 0 ? activeFloors.map(floor => {
-                            const isVIP = floor.toLowerCase().includes('vip');
-                            return (
-                                <button
-                                    key={floor}
-                                    onClick={() => setSelectedFloor(floor)}
-                                    className={`px-6 py-2 rounded-full text-xs font-black tracking-widest uppercase whitespace-nowrap transition-all ${selectedFloor === floor ? 'bg-[#1e1e1e] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                                >
-                                    {isVIP ? <span className="text-yellow-500 mr-1">★</span> : ''} {floor}
-                                </button>
-                            );
-                        }) : (
-                            <div className="px-6 py-2 text-xs font-black tracking-widest uppercase text-slate-500">1-QAVAT</div>
-                        )}
-                    </div>
+                     <div className="flex flex-wrap gap-2">
+                       {/* Floor tabs */}
+                       <div className="flex p-1 rounded-full overflow-x-auto hide-scrollbar" style={{background: t.mutedBg}}>
+                           {activeFloors.length > 0 ? activeFloors.map(floor => {
+                               const isVIP = floor.toLowerCase().includes('vip');
+                               return (
+                                   <button key={floor} onClick={() => setSelectedFloor(floor)}
+                                       className="px-5 py-2 rounded-full text-xs font-black tracking-widest uppercase whitespace-nowrap transition-all"
+                                       style={{background: selectedFloor === floor ? t.floorActive : 'transparent', color: selectedFloor === floor ? t.floorActiveTxt : t.textMuted}}>
+                                       {isVIP ? <span className="text-yellow-500 mr-1">★</span> : ''} {floor}
+                                   </button>
+                               );
+                           }) : <div className="px-6 py-2 text-xs font-black tracking-widest uppercase" style={{color: t.textMuted}}>1-QAVAT</div>}
+                       </div>
+                       {/* Type filter tabs */}
+                       <div className="flex p-1 rounded-full" style={{background: t.mutedBg}}>
+                           {[{id:'all',label:'Barchasi'},{id:'xona',label:'Xonalar'},{id:'stol',label:'Stollar'}].map(tab => (
+                               <button key={tab.id} onClick={() => setSeatingFilter(tab.id as any)}
+                                   className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+                                   style={{background: seatingFilter === tab.id ? t.cardBg : 'transparent', color: seatingFilter === tab.id ? '#dc2626' : t.textMuted}}>
+                                   {tab.label}
+                               </button>
+                           ))}
+                       </div>
+                     </div>
                 </div>
 
                 {/* Grid */}
@@ -534,12 +544,20 @@ export default function RestaurantReservation() {
                 ) : (
                     <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {tables.filter(t => t.floor === selectedFloor).map(item => (
-                                <TableItemCard key={item.id} item={item} />
-                            ))}
+                            {tables
+                                .filter(item => item.floor === selectedFloor)
+                                .filter(item => {
+                                    if (seatingFilter === 'all') return true;
+                                    const type = item.type === 'xona' || (item.capacity > 4 && !item.type) ? 'xona' : 'stol';
+                                    return type === seatingFilter;
+                                })
+                                .map(item => (
+                                    <TableItemCard key={item.id} item={item} />
+                                ))
+                            }
                         </div>
-                        {tables.filter(t => t.floor === selectedFloor).length === 0 && (
-                            <div className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-sm">
+                        {tables.filter(item => item.floor === selectedFloor).length === 0 && (
+                            <div className="py-20 text-center font-bold uppercase tracking-widest text-sm" style={{color: t.textMuted}}>
                                 Bu qavatda joylar topilmadi
                             </div>
                         )}
@@ -547,16 +565,10 @@ export default function RestaurantReservation() {
                 )}
 
                 {/* Legend */}
-                <div className="mt-12 pt-6 border-t border-slate-100 flex items-center gap-6 text-[10px] font-black uppercase tracking-widest justify-center md:justify-start">
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-emerald-500" /> <span className="text-slate-700">Bo'sh</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-red-400" /> <span className="text-slate-700">Band</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-red-600" /> <span className="text-slate-700">Tanlandi</span>
-                    </div>
+                <div className="mt-12 pt-6 flex items-center gap-6 text-[10px] font-black uppercase tracking-widest justify-center md:justify-start" style={{borderTop: `1px solid ${t.border}`}}>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500" /><span style={{color: t.text}}>Bo'sh</span></div>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-400" /><span style={{color: t.text}}>Band</span></div>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-600" /><span style={{color: t.text}}>Tanlandi</span></div>
                 </div>
 
             </div>

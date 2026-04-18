@@ -422,15 +422,9 @@ export default function KitchenDashboard() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const today = new Date().toLocaleDateString('en-CA')
-      const start = `${today}T00:00:00`
-      const end = `${today}T23:59:59`
-
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .gte('created_at', start)
-        .lte('created_at', end)
         .in('status', ['new', 'preparing', 'ready', 'yangi', 'tayyorlanmoqda'])
         .order('created_at', { ascending: true })
 
@@ -438,6 +432,7 @@ export default function KitchenDashboard() {
 
       const validOrders = (data || []).map((order) => ({
         ...order,
+        mode: order.mode || order.order_type || 'nomalum',
         status: normalizeStatus(order.status),
       })) as Order[]
 
@@ -507,7 +502,7 @@ export default function KitchenDashboard() {
           const normalized = normalizeStatus(newOrder.status)
           console.log('[kitchen] normalized status:', normalized)
           if (['new', 'preparing', 'ready'].includes(normalized)) {
-            const order = { ...newOrder, status: normalized } as Order
+            const order = { ...newOrder, mode: newOrder.mode || newOrder.order_type || 'nomalum', status: normalized } as Order
             setOrders((prev) => {
               if (prev.find((o) => o.id === order.id)) return prev
               console.log('[kitchen] Adding new order to state:', order.id)

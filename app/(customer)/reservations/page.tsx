@@ -451,7 +451,7 @@ export default function RestaurantReservation() {
   const selectedSpaceDetail = ROOMS_GALLERY.find(x => x.id === openSpaceId);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300">
+    <main className="min-h-screen bg-white dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300">
       <Toaster position="top-center" />
 
       {/* ---------- Parallax Hero Section ---------- */}
@@ -462,7 +462,7 @@ export default function RestaurantReservation() {
             alt="Afsona Fine Dining Restaurant"
             className="h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-slate-50 dark:to-[#020617]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-white dark:to-[#020617]" />
           <div className="absolute inset-0 bg-gradient-to-tr from-red-600/20 via-transparent to-transparent" />
         </motion.div>
 
@@ -552,7 +552,7 @@ export default function RestaurantReservation() {
 
           <motion.div
             {...fadeUp}
-            className="card-premium rounded-[2.5rem] bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-slate-100 dark:border-slate-800/80 p-6 shadow-2xl dark:shadow-[0_0_50px_rgba(239,68,68,0.05)] sm:p-10"
+            className="card-premium rounded-[2.5rem] bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-transparent p-6 shadow-xl dark:shadow-[0_0_50px_rgba(239,68,68,0.03)] sm:p-10"
           >
             {/* Stepper Steps UI */}
             <div className="mb-8 flex items-center justify-between max-w-xl mx-auto">
@@ -966,7 +966,7 @@ export default function RestaurantReservation() {
       </section>
 
       {/* ---------- bottom Spaces Overview Section ---------- */}
-      <section id="rooms" className="px-6 py-24 bg-white dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-900/60">
+      <section id="rooms" className="px-6 py-24 bg-white dark:bg-slate-950/40">
         <div className="w-full max-w-7xl mx-auto">
           <motion.div {...fadeUp} className="mb-14 text-center space-y-3">
             <span className="text-xs uppercase font-black tracking-[0.35em] text-red-600">Zallarimiz</span>

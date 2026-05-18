@@ -10,7 +10,7 @@ export default function CustomerLayout({
 	return (
 		<div className='min-h-screen flex flex-col'>
 			<Header />
-			<main className='flex-1 max-w-screen-2xl mx-auto px-6 lg:px-10 w-full'>
+			<main className='flex-1 w-full'>
 				{children}
 			</main>
 			<Footer />

@@ -50,7 +50,7 @@ export function Header() {
 	return (
 		<header className='sticky top-0 z-50 w-full transition-all duration-300'>
 			{/* Blur fon */}
-			<div className='absolute top-0 left-0 right-0 h-16 md:h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800' />
+			<div className='absolute top-0 left-0 right-0 h-16 md:h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md' />
 
 			<div className='relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
 				<div className='flex items-center justify-between h-16 md:h-20'>

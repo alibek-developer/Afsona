@@ -17,7 +17,6 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 const navItems = [
-  { href: '/call-center', label: 'Asosiy', icon: Phone },
   { href: '/call-center/orders', label: 'Buyurtmalar', icon: ShoppingBag },
   { href: '/call-center/rooms', label: 'Xonalar', icon: Building2 },
   { href: '/call-center/menu', label: 'Taomlar', icon: UtensilsCrossed },
@@ -94,7 +93,7 @@ export default function CallCenterLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/call-center" className="flex items-center gap-3 group">
+            <Link href="/call-center/orders" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="w-9 h-9 bg-[#FF0000] rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25 transition-transform duration-300 group-hover:scale-105">
                   <Phone size={18} className="text-white" />
@@ -221,17 +220,9 @@ export default function CallCenterLayout({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {children}
-          </motion.div>
-        </div>
+      {/* Main Content - Full screen */}
+      <main className="pt-16 h-screen overflow-hidden">
+        {children}
       </main>
     </div>
   )

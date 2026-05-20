@@ -97,10 +97,10 @@ export default function AdminOrdersPage() {
   const [newOrdersCount, setNewOrdersCount] = useState(0)
   const [newReservationsCount, setNewReservationsCount] = useState(0)
   const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
   const itemsPerPage = 10
 
   const fetchOrders = useCallback(async () => {
@@ -641,20 +641,11 @@ export default function AdminOrdersPage() {
                 <div>
                   <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Yetkazish Ma'lumotlari</h3>
                   <div className="bg-gray-50 dark:bg-[#141414] p-4 rounded-xl space-y-3 border border-gray-100 dark:border-gray-800">
-                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">Turi:</span> <span className="font-bold">
-                      {{'delivery': 'Yetkazib berish', 'dine-in': 'Restoranda', 'restaurant': 'Olib ketish', 'takeaway': 'Olib ketish'}[(selectedOrder.order_type || selectedOrder.mode) as string] || selectedOrder.order_type || selectedOrder.mode || 'Noma\'lum'}
-                    </span></div>
+                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">Turi:</span> <span className="font-bold">{selectedOrder.order_type || selectedOrder.mode || 'Noma\'lum'}</span></div>
                     {selectedOrder.delivery_address && <div className="flex flex-col gap-1 mt-2 border-t pt-2 border-gray-100 dark:border-gray-800"><span className="text-sm text-gray-500">Manzil:</span> <span className="font-medium leading-relaxed">{selectedOrder.delivery_address}</span></div>}
                     {selectedOrder.table_number && <div className="flex justify-between items-center"><span className="text-sm text-gray-500">Stol raqami:</span> <span className="font-bold">{selectedOrder.table_number}</span></div>}
-                    <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-800 pt-2 mt-2"><span className="text-sm text-gray-500">To'lov usuli:</span> <span className="font-bold">
-                      {{'card': 'Karta', 'cash': 'Naqd pul'}[selectedOrder.payment_method as string] || selectedOrder.payment_method}
-                    </span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">To'lov holati:</span> <span className={cn("font-bold px-2 py-0.5 rounded text-xs", selectedOrder.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')}>
-                      {{'paid': '✅ To\'langan', 'pending': '⏳ Kutilmoqda', 'failed': '❌ Bekor bo\'lgan'}[selectedOrder.payment_status as string] || 'Hali to\'lanmagan'}
-                    </span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">Manba:</span> <span className="font-medium bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-xs text-gray-700 dark:text-gray-300">
-                      {{'mobile_app': '📱 Mobil Ilova', 'website': '💻 Vebsayt'}[selectedOrder.source as string] || selectedOrder.source}
-                    </span></div>
+                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">To'lov usuli:</span> <span className="font-bold">{selectedOrder.payment_method}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-sm text-gray-500">Manba (App/Web):</span> <span className="font-medium bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">{selectedOrder.source}</span></div>
                   </div>
                 </div>
                 

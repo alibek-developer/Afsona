@@ -79,8 +79,7 @@ export async function submitOrder(orderData: OrderData) {
 			source: 'call-center',
 			...(orderData.latitude !== undefined && { latitude: orderData.latitude }),
 			...(orderData.longitude !== undefined && { longitude: orderData.longitude }),
-			...(orderData.landmark && { landmark: orderData.landmark }),
-		};
+			};
 
 		console.log("📦 ORDER PAYLOAD:", orderPayload);
 

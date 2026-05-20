@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { ArrowRight, Star, Clock, Users, Award, Car } from 'lucide-react'
+import { Car, Clock, Star, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export function HeroSection() {
@@ -10,11 +10,11 @@ export function HeroSection() {
 		<>
 			<section className='relative min-h-[90vh] w-full flex items-center bg-slate-50 dark:bg-black overflow-hidden pt-20 pb-10'>
 				{/* Orqa fon rasmi (To'liq qoplovchi) */}
-				<div 
+				<div
 					className='absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-50 dark:opacity-40'
 					style={{ backgroundImage: 'url("/hero-bg.jpg")' }} // As a placeholder, use a generic or missing image bg color
 				/>
-				
+
 				{/* Gradient Overlay for better readability */}
 				<div className='absolute inset-0 z-0 bg-gradient-to-r from-white/80 via-white/50 to-white/10 dark:from-black/80 dark:via-black/50 dark:to-transparent' />
 
@@ -37,10 +37,12 @@ export function HeroSection() {
 							transition={{ duration: 0.8, ease: 'easeOut' }}
 						>
 							<h1 className='text-5xl md:text-7xl lg:text-[5.5rem] font-black uppercase leading-[1.05] tracking-tight text-slate-900 dark:text-white mb-2'>
-								Haqiqiy<br />
+								Haqiqiy
+								<br />
 								<span className='text-red-600 italic bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-red-700 dark:from-red-500 dark:to-red-700'>
 									Lazzat
-								</span><br />
+								</span>
+								<br />
 								San'ati
 							</h1>
 						</motion.div>
@@ -51,7 +53,8 @@ export function HeroSection() {
 							transition={{ delay: 0.4 }}
 							className='text-slate-600 dark:text-slate-300 text-base md:text-lg font-medium leading-relaxed max-w-lg mb-8'
 						>
-							Asrlar davomida sayqal topgan retseptlar, sarxil masalliqlar va milliy mehmondo'stlikning eng sara namunalari bir manzilda.
+							Asrlar davomida sayqal topgan retseptlar, sarxil masalliqlar va
+							milliy mehmondo'stlikning eng sara namunalari bir manzilda.
 						</motion.p>
 
 						<motion.div
@@ -64,9 +67,7 @@ export function HeroSection() {
 								asChild
 								className='h-14 sm:h-16 px-8 sm:px-10 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl sm:rounded-2xl transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.4)] uppercase tracking-widest flex items-center gap-3 text-xs sm:text-sm'
 							>
-								<Link href='/menu'>
-									Menyuni ko'rish
-								</Link>
+								<Link href='/menu'>Menyuni ko'rish</Link>
 							</Button>
 
 							<Button
@@ -109,7 +110,7 @@ export function HeroSection() {
 				<div className='max-w-7xl mx-auto px-6'>
 					<div className='grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-1 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-800'>
 						{/* Stat 1 */}
-						<motion.div 
+						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
@@ -121,7 +122,7 @@ export function HeroSection() {
 							</div>
 							<div className='text-center'>
 								<h3 className='text-2xl lg:text-3xl font-black text-slate-900 dark:text-white mb-1'>
-									30+ YILLIK
+									5+ YILLIK
 								</h3>
 								<p className='text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500'>
 									Tajriba
@@ -130,7 +131,7 @@ export function HeroSection() {
 						</motion.div>
 
 						{/* Stat 2 */}
-						<motion.div 
+						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
@@ -142,7 +143,7 @@ export function HeroSection() {
 							</div>
 							<div className='text-center'>
 								<h3 className='text-2xl lg:text-3xl font-black text-slate-900 dark:text-white mb-1'>
-									50+ USTA
+									2+ USTA
 								</h3>
 								<p className='text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500'>
 									Oshpazlar
@@ -151,7 +152,7 @@ export function HeroSection() {
 						</motion.div>
 
 						{/* Stat 3 */}
-						<motion.div 
+						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}

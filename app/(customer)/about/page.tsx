@@ -48,7 +48,7 @@ export default function AboutPage() {
 					<div className='flex items-center justify-center gap-4'>
 						<span className='h-[2px] w-12 bg-red-600'></span>
 						<p className='text-slate-500 dark:text-slate-400 font-black tracking-[0.4em] uppercase text-xs'>
-							Est. 2010 • Premium Quality
+							Est. 2020 • Premium Quality
 						</p>
 						<span className='h-[2px] w-12 bg-red-600'></span>
 					</div>
@@ -115,7 +115,7 @@ export default function AboutPage() {
 								Maskani
 							</h2>
 							<p className='text-slate-600 dark:text-slate-400 text-xl leading-relaxed font-medium max-w-xl'>
-								Afsona Oshxonasi 2010-yildan buyon haqiqiy mehmondorchilikni
+								Afsona Oshxonasi 2020-yildan buyon haqiqiy mehmondorchilikni
 								ulashib kelmoqda. Har bir taomimizda ota-bobolarimiz siri va
 								cheksiz mehr bor.
 							</p>
@@ -124,7 +124,7 @@ export default function AboutPage() {
 						<div className='flex gap-12'>
 							<div>
 								<h4 className='font-black text-5xl text-slate-900 dark:text-white italic'>
-									15<span className='text-red-600'>+</span>
+									5<span className='text-red-600'>+</span>
 								</h4>
 								<p className='text-xs text-slate-500 uppercase font-black tracking-widest mt-2'>
 									Yillik Tajriba
@@ -133,7 +133,7 @@ export default function AboutPage() {
 							<div className='w-[1px] h-16 bg-slate-200 dark:bg-slate-800'></div>
 							<div>
 								<h4 className='font-black text-5xl text-slate-900 dark:text-white italic'>
-									50<span className='text-red-600'>+</span>
+									2<span className='text-red-600'>+</span>
 								</h4>
 								<p className='text-xs text-slate-500 uppercase font-black tracking-widest mt-2'>
 									Usta Oshpazlar
@@ -161,7 +161,7 @@ export default function AboutPage() {
 						{
 							icon: Phone,
 							title: 'Aloqa',
-							desc: '+998 71 123',
+							desc: '+998 62 227 70 62',
 							label: 'Ishonch telefoni',
 						},
 						{

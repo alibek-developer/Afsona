@@ -167,25 +167,16 @@ export default function BannersPage() {
     <div className="min-h-screen bg-white dark:bg-[#111] p-6 md:p-12 space-y-12 animate-in fade-in duration-700">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gray-100 dark:border-[#2e2e2e] pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-              <LayoutGrid className="w-6 h-6" />
-            </div>
-            <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">Marketing Engine</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-gray-900 dark:text-[#e8e8e8] leading-tight">
-            Afsona <span className="text-red-600 dark:text-red-400">Banners</span>
-          </h1>
-          <p className="text-gray-400 dark:text-[#888] text-xl font-medium max-w-2xl leading-relaxed">
-            Mijozlar uchun eng jozibador takliflar va yangiliklarni boshqarish markazi.
-          </p>
-          {/* Debug: branchId ko'rinishi */}
-          {!branchId && (
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-gray-100 dark:border-[#2e2e2e] pb-6">
+        <div>
+          {!branchId ? (
             <p className="text-amber-500 text-sm font-medium">
               ⚠️ Branch yuklanmoqda...
             </p>
+          ) : (
+            <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
+              Banners Management
+            </span>
           )}
         </div>
 
@@ -207,45 +198,6 @@ export default function BannersPage() {
             <Plus className="w-6 h-6 stroke-[3]" />
             Banner Qo'shish
           </Button>
-        </div>
-      </div>
-
-      {/* Search & Filter */}
-      <div className="flex flex-col xl:flex-row gap-6 items-stretch xl:items-center">
-        <div className="relative flex-1 group">
-          <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
-            <Search className="w-6 h-6 text-gray-400 dark:text-[#888] group-focus-within:text-red-500 dark:group-focus-within:text-red-400 transition-colors" />
-          </div>
-          <Input
-            placeholder="Bannerlarni nomi bo'yicha qidirish..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-16 h-[72px] bg-white dark:bg-[#1a1a1a] border-2 border-gray-200 dark:border-[#2e2e2e] focus:border-red-500 dark:focus:border-red-400 rounded-[28px] text-xl font-medium shadow-sm transition-all outline-none text-gray-900 dark:text-[#e8e8e8]"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger className="w-[200px] h-[72px] rounded-[28px] border-2 border-gray-200 dark:border-[#2e2e2e] bg-white dark:bg-[#1a1a1a] font-bold text-gray-900 dark:text-[#e8e8e8] px-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-[#1a1a1a]">
-              <SelectItem value="all">Barcha Holatlar</SelectItem>
-              <SelectItem value="active">Faqat Faol</SelectItem>
-              <SelectItem value="inactive">Nofaol</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-            <SelectTrigger className="w-[200px] h-[72px] rounded-[28px] border-2 border-gray-200 dark:border-[#2e2e2e] bg-white dark:bg-[#1a1a1a] font-bold text-gray-900 dark:text-[#e8e8e8] px-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-[#1a1a1a]">
-              <SelectItem value="position">Tartib bo'yicha</SelectItem>
-              <SelectItem value="title">Nomi bo'yicha</SelectItem>
-              <SelectItem value="created_at">Sana bo'yicha</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

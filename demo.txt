@@ -1,0 +1,270 @@
+================================================================================
+                    AFSONA PROJECT FILE STRUCTURE
+================================================================================
+
+Afsona/
+│
+├── Root Configuration Files
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   ├── next.config.mjs
+│   ├── middleware.ts
+│   ├── components.json
+│   ├── tailwind.config.ts
+│   ├── postcss.config.mjs
+│   ├── next-env.d.ts
+│   ├── README.md
+│   ├── .gitignore
+│   ├── demo.txt
+│   └── test_checkout_logic.js
+│
+├── public/
+│   ├── placeholder.svg
+│   ├── placeholder-logo.svg
+│   ├── placeholder-logo.png
+│   ├── logo.jpg
+│   ├── icon.svg
+│   └── hero-1.png
+│
+├── styles/
+│   └── globals.css
+│
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   │
+│   ├── login/
+│   │   └── page.tsx
+│   │
+│   ├── (customer)/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   │
+│   │   ├── about/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── checkout/
+│   │   │   ├── page.tsx
+│   │   │   └── actions.ts
+│   │   │
+│   │   ├── menu/
+│   │   │   ├── page.tsx
+│   │   │   └── loading.tsx
+│   │   │
+│   │   ├── payment-success/
+│   │   │   └── page.tsx
+│   │   │
+│   │   └── reservations/
+│   │       └── page.tsx
+│   │
+│   ├── admin/
+│   │   ├── layout.tsx
+│   │   ├── loading.tsx
+│   │   ├── page.tsx
+│   │   │
+│   │   ├── dashboard/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── banners/
+│   │   │   ├── page.tsx
+│   │   │   ├── BannerModal.tsx
+│   │   │   ├── BannerTable.tsx
+│   │   │   ├── ColorPicker.tsx
+│   │   │   ├── DateRangeSelector.tsx
+│   │   │   ├── DeleteConfirmDialog.tsx
+│   │   │   ├── ImageUploadField.tsx
+│   │   │   ├── LinkTypeSelector.tsx
+│   │   │   └── PreviewModal.tsx
+│   │   │
+│   │   ├── categories/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── menu/
+│   │   │   ├── page.tsx
+│   │   │   └── loading.tsx
+│   │   │
+│   │   ├── order/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── buyurtmalar/
+│   │   │   ├── page.tsx
+│   │   │   └── actions.ts
+│   │   │
+│   │   ├── reservation/
+│   │   │   └── page.tsx
+│   │   │
+│   │   └── website/
+│   │
+│   ├── call-center/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── actions.ts
+│   │   │
+│   │   ├── components/
+│   │   │   ├── index.ts
+│   │   │   ├── FloorTabs.tsx
+│   │   │   ├── FloorMap.tsx
+│   │   │   ├── BookingSidebar.tsx
+│   │   │   ├── MenuOrderSidebar.tsx
+│   │   │   ├── MenuItemsList.tsx
+│   │   │   ├── RoomCard.tsx
+│   │   │   └── RoomPreviewModal.tsx
+│   │   │
+│   │   ├── menu/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── orders/
+│   │   │   ├── page.tsx
+│   │   │   └── [id]/
+│   │   │       └── page.tsx
+│   │   │
+│   │   └── rooms/
+│   │       └── page.tsx
+│   │
+│   ├── kitchen/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   │
+│   └── api/
+│       ├── banners/
+│       │   ├── route.ts
+│       │   ├── [id]/
+│       │   │   └── route.ts
+│       │   ├── upload/
+│       │   │   └── route.ts
+│       │   └── reorder/
+│       │       └── route.ts
+│       │
+│       ├── categories/
+│       │   └── route.ts
+│       │
+│       ├── dropdown-options/
+│       │   └── route.ts
+│       │
+│       ├── menu-items/
+│       │   └── route.ts
+│       │
+│       ├── order-lifecycle/
+│       │   └── route.ts
+│       │
+│       ├── profile/
+│       │   └── route.ts
+│       │
+│       └── promotions/
+│           └── route.ts
+│
+├── components/
+│   ├── InteractiveMap.tsx
+│   ├── mapbox-map.tsx
+│   ├── theme-provider.tsx
+│   ├── theme-toggle.tsx
+│   │
+│   ├── ui/
+│   │   ├── alert-dialog.tsx
+│   │   ├── alert.tsx
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── checkbox.tsx
+│   │   ├── dialog.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── price.tsx
+│   │   ├── radio-group.tsx
+│   │   ├── scroll-area.tsx
+│   │   ├── select.tsx
+│   │   ├── sheet.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── switch.tsx
+│   │   ├── table.tsx
+│   │   └── textarea.tsx
+│   │
+│   ├── admin/
+│   │   ├── menu-item-dialog.tsx
+│   │   ├── new-phone-order-dialog.tsx
+│   │   ├── order-details-dialog.tsx
+│   │   └── table-modal-dialog.tsx
+│   │
+│   ├── customer/
+│   │   ├── cart-sidebar.tsx
+│   │   ├── category-filter.tsx
+│   │   ├── customer-features.tsx
+│   │   ├── featured-dishes.tsx
+│   │   ├── footer.tsx
+│   │   ├── header.tsx
+│   │   ├── hero-section.tsx
+│   │   ├── location-picker.tsx
+│   │   └── menu-card.tsx
+│   │
+│   └── toast/
+│       ├── custom-toast.tsx
+│       └── toast-container.tsx
+│
+├── lib/
+│   ├── banner-validation.ts
+│   ├── banner.ts
+│   ├── constants.ts
+│   ├── mock-data.ts
+│   ├── store.ts
+│   ├── supabase-queries.ts
+│   ├── supabaseClient.ts
+│   ├── supabaseServer.ts
+│   ├── toast-store.ts
+│   ├── toast.ts
+│   ├── types.ts
+│   ├── useAuth.ts
+│   ├── useMounted.ts
+│   ├── utils.ts
+│   │
+│   └── services/
+│       ├── index.ts
+│       ├── courier-service.ts
+│       ├── courier-types.ts
+│       ├── earnings-service.ts
+│       ├── notification-service.ts
+│       ├── order-lifecycle-actions.ts
+│       └── order-status-service.ts
+│
+└── supabase/
+    ├── optional_rls_anon_menu_select.sql
+    │
+    └── migrations/
+        ├── 20260404120000_orders_idempotency_key.sql
+        ├── 20260405000000_courier_notification_tracking.sql
+        ├── 20260406000000_enable_realtime_orders.sql
+        └── 20260407000000_create_website_banners_table.sql
+
+================================================================================
+                            SUMMARY STATISTICS
+================================================================================
+
+Total Files: 143
+
+Key Directories:
+- app/          - Next.js app router (pages, layouts, API routes)
+- components/   - Reusable React components (UI, Admin, Customer, Toast)
+- lib/          - Utility functions, services, and hooks
+- public/       - Static assets
+- supabase/     - Database migrations and SQL files
+
+Main Features:
+✓ Customer Portal: Menu browsing, checkout, reservations, payments
+✓ Admin Dashboard: Menu management, categories, banners, orders
+✓ Call Center: Room bookings, floor management, order tracking
+✓ Kitchen: Order display and management
+✓ Authentication: Login and user profile management
+✓ API Routes: RESTful endpoints for various operations
+✓ Supabase Integration: Database, migrations, real-time functionality
+
+Technology Stack:
+- Framework: Next.js (App Router)
+- UI Components: Custom Shadcn-style components
+- Database: Supabase (PostgreSQL)
+- Styling: Tailwind CSS
+- Maps: Mapbox
+- State Management: Custom store/hooks
+
+================================================================================
